@@ -1,11 +1,11 @@
 import Web3 from 'web3'
 import { newKitFromWeb3 } from '@celo/contractkit'
 import BigNumber from "bignumber.js"
-import marketplaceAbi from '../contract/marketplace.abi.json'
+import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x82B1C5352A6e2f1941fBddaD170f99E7C9D71752"
+const AuctionContractAddress = "0x42e8AB632fa532C3B840944F979951dE7D9242D2"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -36,7 +36,7 @@ const connectCeloWallet = async function () {
       const accounts = await kit.web3.eth.getAccounts()
       kit.defaultAccount = accounts[0]
       
-      contract = new kit.web3.eth.Contract(marketplaceAbi, AuctionContractAddress)
+      contract = new kit.web3.eth.Contract(auctionAbi, AuctionContractAddress)
 
     } catch (error) {
       notification(`⚠️ ${error}.`)
@@ -63,8 +63,8 @@ const getBalance = async function () {
 }
 
 
-const getProducts = async function() {
-  const _productsLength = await contract.methods.getProductsLength().call()
+const getAuctions = async function() {
+  const _auctionsLength = await contract.methods.getAuctionsLength().call()
   const _products = []
   for (let i = 0; i < _productsLength; i++) {
     let _product = new Promise(async (resolve, reject) => {
@@ -87,7 +87,7 @@ const getProducts = async function() {
 }
 
 function renderProducts() {
-    document.getElementById("marketplace").innerHTML = ""
+    document.getElementById("gallery").innerHTML = ""
     products.forEach((_product) => {
       const newDiv = document.createElement("div")
       newDiv.className = "col-md-4"

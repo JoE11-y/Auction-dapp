@@ -22,10 +22,8 @@ contract Auctions{
     uint256 internal amount;
     address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     uint index = 0;
-
-    address testAddress = 0xBB3b4F6E962e138FeE39a9a944878fD7f33121f1;
    
-   event highestBidIncrease(address bidder, uint amount);
+    event highestBidIncrease(address bidder, uint amount);
 
     struct Auction {
         address payable beneficiary;
@@ -115,7 +113,7 @@ contract Auctions{
 
     function payBidFee(uint _index) public payable{
         require(
-            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, testAddress, auctions[_index].biddingFee),
+            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), auctions[_index].biddingFee),
                 "Transfer failed"
         );
         auctions[_index].hasPaidBidFee[msg.sender] = true;
@@ -159,6 +157,10 @@ contract Auctions{
 
         auctions[_index].auctionSettled = true;
         auctions[_index].auctionEnded = true;
+    }
+    
+    function getAuctionsLength() public view returns(uint){
+        return (index);
     }
 
 
