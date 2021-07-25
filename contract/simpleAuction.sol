@@ -22,6 +22,8 @@ contract Auctions{
     uint256 internal amount;
     address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     uint index = 0;
+    //uint auctionStartTime = 86400; //seconds
+    uint auctionStartTime = 120; //test
    
     event highestBidIncrease(address bidder, uint amount);
 
@@ -72,7 +74,6 @@ contract Auctions{
     function createAuction(
         string memory _itemDetails,
         string memory _itemImage,
-        uint _startTime,
         uint _endTime,
         uint _startPrice
         )public {
@@ -80,7 +81,7 @@ contract Auctions{
             _auction.beneficiary = payable(msg.sender);
             _auction.itemDetails = _itemDetails;
             _auction.itemImage = _itemImage;
-            _auction.auctionStartTime = block.timestamp + _startTime;
+            _auction.auctionStartTime = block.timestamp + auctionStartTime;
             _auction.auctionEndTime = _auction.auctionStartTime + _endTime;
             _auction.startPrice = _startPrice;
             _auction.biddingFee = (_startPrice)/10;
