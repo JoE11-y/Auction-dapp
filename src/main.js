@@ -5,7 +5,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x42e8AB632fa532C3B840944F979951dE7D9242D2"
+const AuctionContractAddress = "0x29FF447f6ee63D397D3480b317776edfFCc88571"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -98,7 +98,7 @@ function renderAuctions() {
 
 function auctionTemplate(_auction) {
   return `
-  
+
   `
 }
 
