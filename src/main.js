@@ -235,77 +235,78 @@ function renderAuctionModal(index) {
 
 function auctionModalTemplate(_auction){ 
     return`
-    <div class="modal-content" style="background-color: rgb(171, 161, 163);">
-          <div class="modal-header">
-            <h5 class="modal-title" id="auctionTitle">Auction name</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+<div class="modal-content" style="background-color: rgb(171, 161, 163);">
+  <div class="modal-header">
+    <h5 class="modal-title" id="auctionTitle">Auction name</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+  </div>
+  <div class="modal-body flex_container" style="background-color: rgb(171, 161, 163);">
+    <div class="flex_row">
+      <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
+        <div class="carousel-indicators">
+          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
+          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
+        </div>
+        <div class="carousel-inner">
+          <div class="carousel-item active">
+            <img src="https://mdbootstrap.com/img/new/slides/041.jpg" class="d-block w-100" alt="..." />
           </div>
-          <div class="modal-body flex_container" style="background-color: rgb(171, 161, 163);">
-            <div class="flex_row">
-              <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
-                <div class="carousel-indicators">
-                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
-                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
-                </div>
-                <div class="carousel-inner">
-                  <div class="carousel-item active">
-                    <img src="https://mdbootstrap.com/img/new/slides/041.jpg" class="d-block w-100" alt="..." />
-                  </div>
-                  <div class="carousel-item">
-                    <img src="https://mdbootstrap.com/img/new/slides/042.jpg" class="d-block w-100" alt="..." />
-                  </div>
-                  <div class="carousel-item">
-                    <img src="https://mdbootstrap.com/img/new/slides/043.jpg" class="d-block w-100" alt="..." />
-                  </div>
-                </div>
-                <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
-                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                  <span class="visually-hidden">Previous</span>
-                </button>
-                <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
-                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                  <span class="visually-hidden">Next</span>
-                </button>
-              </div>   
-            </div>
-           <div class="flex_row">
-              <div>
-                <h1>
-                  &ensp;Item Details
-                </h1>
-              </div>
-              <hr>
-              <div>
-                <p>&emsp;&emsp;Starts in:</p>
-              </div>
-              <div class="is-hidden">
-                <p>&emsp;&emsp;Time Left:</p>
-              </div>
-              <div class="is-hidden">
-                <p>&emsp;&emsp;Time Left: Listing has Ended</p>
-              </div>
-              <hr>
-              <div>
-                <p>&emsp;&emsp;Start Price:&ensp;US $100.00</p>
-                <p>&emsp;&emsp;Current Bid:&ensp;US $100.00</p>
-              </div>
-              <div class="is-hidden">
-                &emsp;&emsp;<input type="text"> <button type="button" class="btn btn-dark">Place bid</button><br>
-              </div>
-              <div>
-                <br>
-                <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-                &emsp;&emsp;<button type="button" class="btn btn-dark">
-                  Pay Bid Fee
-                </button>
-                &emsp;&emsp;<button type="button" class="btn btn-dark is-hidden">
-                  Withdraw Bid Fee
-                </button>
-              </div>
-            </div>
+          <div class="carousel-item">
+            <img src="https://mdbootstrap.com/img/new/slides/042.jpg" class="d-block w-100" alt="..." />
           </div>
+          <div class="carousel-item">
+            <img src="https://mdbootstrap.com/img/new/slides/043.jpg" class="d-block w-100" alt="..." />
+          </div>
+        </div>
+        <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
+          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Previous</span>
+        </button>
+        <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
+          <span class="carousel-control-next-icon" aria-hidden="true"></span>
+          <span class="visually-hidden">Next</span>
+        </button>
+      </div>
     </div>
+    <div class="flex_row">
+      <div>
+        <h1>
+          &ensp;Item Details
+        </h1>
+      </div>
+      <hr>
+      <div>
+        <p>&emsp;&emsp;Starts in:</p>
+      </div>
+      <div class="is-hidden">
+        <p>&emsp;&emsp;Time Left:</p>
+      </div>
+      <div class="is-hidden">
+        <p>&emsp;&emsp;Time Left: Listing has Ended</p>
+      </div>
+      <hr>
+      <div>
+        <p>&emsp;&emsp;Start Price:&ensp;US $100.00</p>
+        <p>&emsp;&emsp;Current Bid:&ensp;US $100.00</p>
+      </div>
+      <div class="is-hidden">
+        &emsp;&emsp;<input type="text"> <button type="button" class="btn btn-dark">Place bid</button><br>
+      </div>
+      <div>
+        <br>
+        <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
+        &emsp;&emsp;<button type="button" class="btn btn-dark">
+          Pay Bid Fee
+        </button>
+        &emsp;&emsp;<button type="button" class="btn btn-dark is-hidden">
+          Withdraw Bid Fee
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 `}
 
 function identiconTemplate(_address) {
