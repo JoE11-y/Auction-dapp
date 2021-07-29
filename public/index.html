@@ -14,45 +14,64 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/mdb-ui-kit/3.6.0/mdb.min.css" rel="stylesheet" />
     <style>
       :root {
-        --bs-font-sans-serif: "DM Sans", sans-serif;
-        font-family: 'Asap', sans-serif;
+      --bs-font-sans-serif: "DM Sans", sans-serif;
+      font-family: 'Asap', sans-serif;
+      }
+      * {
+        box-sizing: border-box;
       }
 
-      @media (min-width: 576px) {
-        .card {
-          border: 0;
-          box-shadow: rgb(0 0 0 / 5%) 0px 10px 20px;
-          border-radius: 10px;
-        }
-
-        .card-img-top {
-          width: 100%;
-          height: 20vw;
-          object-fit: cover;
-        }
-
-        .modal-xl {
-          width: 90%;
-          max-width: 1200px;
-        }
-      }
-
-      .large {
-        width: 640px;
-        height: 480px;
+      .flex_container {
         display: flex;
-        align-items: center;
+        flex-wrap: wrap;
+        padding: 0 4px;
+      }
+
+      /* Create four equal columns that sits next to each other */
+      .flex_row {
+        flex: 50%;
+        max-width: 50%;
+        padding: 15px;
+      }
+
+      .flex_row img {
+        margin-top: 8px;
+        vertical-align: middle;
       }
 
       .is-hidden {
         display: none;
       }
+
+      .modal-xl {
+      width: 90%;
+      max-width: 1200px;
+      }
+
       .back{
         box-shadow: none;
       }
 
+          /* Responsive layout - makes the two columns stack on top of each other instead of next to each other */
+      @media (max-width: 900px) {
+        .flex_row {
+          flex: 100%;
+          max-width: 100%;
+          padding: 15px;
+        }
+        .card {
+          border: 0;
+          box-shadow: rgb(0 0 0 / 5%) 0px 10px 20px;
+          border-radius: 10px;
+        }
+        .card-img-top {
+          width: 100%;
+          height: 20vw;
+          object-fit: cover;
+        }
+      }
+       
     </style>
-
     <title>Bid War</title>
   </head>
 
@@ -120,7 +139,7 @@
 
     <!--Auction Modal-2-->
     <div class="modal fade" id="auctionModal" tabindex="-1" aria-labelledby="auctionModal" aria-hidden="true" data-backdrop="static" data-keyboard="false">
-      <div class="modal-dialog modal-xl" id="auctionDisplay" style="background-color: rgb(171, 161, 163);">
+      <div class="modal-dialog modal-xl" id="auctionDisplay" style="background-color: rgb(171, 161, 163);" data-bs-backdrop="static" data-bs-keyboard="false">
         
       </div>
     </div>

@@ -56,7 +56,7 @@ const auctions = [
     startPrice:300,
     highestBid: 300,
     hasAuctionStarted: false,
-    remainingTimeTillStart: 86400,
+    remainingTimeTillStart: 4000,
   },
   {
     name: "Barbecue Pizza",
@@ -157,16 +157,7 @@ function renderAuctions() {
       newDiv.className = "col-md-4"
       newDiv.innerHTML = auctionTemplate(_auction)
       document.getElementById("gallery").appendChild(newDiv)
-      editAuction(_a)
     })
-}
-
-function editAuction(_auction) {
-  if (_auction.hasAuctionStarted){ 
-     $("#starts").addClass('is-hidden')
-  }else{
-    $("#ends").addClass('is-hidden')
-  }
 }
 
 function checkTime(_auction){
@@ -193,7 +184,7 @@ function checkTime(_auction){
 }
 
 function convertDays(_days){
-  var seconds = Math.floor(_time * 24 * 3600);
+  var seconds = Math.floor(_days * 24 * 3600);
   return seconds;
 }
 
@@ -214,9 +205,9 @@ function auctionTemplate(_auction) {
     <h3 class="card-text mt-4">
       $${_auction.highestBid}
     </h3>
-    <p class="card-text mt-4" id="starts">
+    <p class="card-text mt-4">
     <i class="fas fa-hourglass-half"></i>&nbsp;
-      ${checkTime(_auction.remainingTimeTillStart)}
+      ${checkTime(_auction)}
     </p>
     <div class="d-grid gap-2">
       <a class="btn btn-lg btn-outline-dark viewAuction fs-6 p-3" id=${
@@ -249,36 +240,36 @@ function auctionModalTemplate(_auction){
             <h5 class="modal-title" id="auctionTitle">Auction name</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
           </div>
-          <div class="modal-body" style="background-color: rgb(171, 161, 163); display: flex; overflow: hidden; height: 500px; width: max-content">
-            <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel" style="background-color: rgb(171, 161, 163); height:max-content; float:left; padding: 10px; width: max-content;">
-              <div class="carousel-indicators">
-                <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-                <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
-                <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
-              </div>
-              <div class="carousel-inner large">
-                <div class="carousel-item active">
-                  <img src="https://mdbootstrap.com/img/new/slides/041.jpg" class="d-block w-100" alt="..." />
+          <div class="modal-body flex_container" style="background-color: rgb(171, 161, 163);">
+            <div class="flex_row">
+              <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
+                <div class="carousel-indicators">
+                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
+                  <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
                 </div>
-                <div class="carousel-item">
-                  <img src="https://mdbootstrap.com/img/new/slides/042.jpg" class="d-block w-100" alt="..." />
+                <div class="carousel-inner">
+                  <div class="carousel-item active">
+                    <img src="https://mdbootstrap.com/img/new/slides/041.jpg" class="d-block w-100" alt="..." />
+                  </div>
+                  <div class="carousel-item">
+                    <img src="https://mdbootstrap.com/img/new/slides/042.jpg" class="d-block w-100" alt="..." />
+                  </div>
+                  <div class="carousel-item">
+                    <img src="https://mdbootstrap.com/img/new/slides/043.jpg" class="d-block w-100" alt="..." />
+                  </div>
                 </div>
-                <div class="carousel-item">
-                  <img src="https://mdbootstrap.com/img/new/slides/043.jpg" class="d-block w-100" alt="..." />
-                </div>
-              </div>
-              <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
-                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Previous</span>
-              </button>
-              <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
-                <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Next</span>
-              </button>
+                <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
+                  <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Previous</span>
+                </button>
+                <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
+                  <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                  <span class="visually-hidden">Next</span>
+                </button>
+              </div>   
             </div>
-   
-   
-            <div style="text-align: left; padding: 20px; height: 500px; float: left; width: 500px;">
+           <div class="flex_row">
               <div>
                 <h1>
                   &ensp;Item Details
@@ -314,8 +305,7 @@ function auctionModalTemplate(_auction){
               </div>
             </div>
           </div>
-        </div>
-
+    </div>
 `}
 
 function identiconTemplate(_address) {
