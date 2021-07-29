@@ -37,6 +37,7 @@ contract Auctions{
         uint biddingFee;
         address highestBidder;
         uint highestBid;
+        uint noOfBids;
         bool auctionEnded;
         bool auctionSettled;
 
@@ -86,6 +87,7 @@ contract Auctions{
             _auction.startPrice = _startPrice;
             _auction.biddingFee = (_startPrice)/10;
             _auction.highestBid = _auction.startPrice;
+            _auction.noOfBids = 0;
             _auction.auctionEnded = false;
             _auction.auctionSettled = false;
 
@@ -101,14 +103,15 @@ contract Auctions{
         uint,
         uint
     ) {
+        uint endTime = auctions[_index].auctionEndTime - block.timestamp;
         return(
             auctions[_index].beneficiary,
             auctions[_index].itemImage,
             auctions[_index].itemDetails,
-            auctions[_index].auctionStartTime,
-            auctions[_index].auctionEndTime,
+            endTime,
             auctions[_index].startPrice,
-            auctions[_index].biddingFee
+            auctions[_index].biddingFee,
+            auctions[_index].noOfBids
         );
     }
 
@@ -148,6 +151,7 @@ contract Auctions{
         auctions[_index].highestBid = bidAmount;
         
         emit highestBidIncrease(msg.sender, bidAmount);
+        auctions[_index].noOfBids++;
     }
 
     function settleAuction(uint _index, uint _highestBid) public payable onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index){
@@ -164,5 +168,14 @@ contract Auctions{
         return (index);
     }
 
+    function hasAuctionStarted(uint _index) public view returns(bool, uint){
+        uint remainingTime = 0; 
+        if(block.timestamp > auctions[_index].auctionStartTime){
+            return (true, remainingTime);
+        }else{
+            remainingTime = auctions[_index].auctionStartTime - block.timestamp;
+            return (false, remainingTime);
+        }
+    }
 
 }
