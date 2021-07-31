@@ -156,7 +156,7 @@ const getRecentAuctions = async function() {
   let i = _auctionsLength--
   let n = _auctionsLength - 5
   for (i; i > n; i--) {
-    auctions["hasPaidBidFee"] = await contract.methods.hasPaidBidFee(i).call()
+    auctions["hasPaidBidFee"] = await contract.methods._hasPaidBidFee(i).call()
     let _auction = new Promise(async (resolve, reject) => {
       let p = await contract.methods.getAuction(i).call()
       let q = await contract.methods.hasAuctionStarted(i).call()
@@ -345,7 +345,7 @@ function auctionModalTemplate(_auction) {
 
 function editAuctionModal(){
   if(auctions.hasPaidBidFee){
-    
+
   }
 }
 

@@ -178,9 +178,9 @@ contract Auctions{
         }
     }
 
-    function hasPaidBidFee(uint _index) public view returns(bool){
+    function _hasPaidBidFee(uint _index) public view returns(bool){
         return(
              auctions[_index].hasPaidBidFee[msg.sender]
-        )
+        );
     }
 }
