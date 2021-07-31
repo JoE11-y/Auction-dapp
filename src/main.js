@@ -1,5 +1,7 @@
 import Web3 from 'web3'
-import { newKitFromWeb3 } from '@celo/contractkit'
+import {
+  newKitFromWeb3
+} from '@celo/contractkit'
 import BigNumber from "bignumber.js"
 import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
@@ -11,82 +13,99 @@ const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 let contract
 let kit
+let hasPaidBidFee
 
-const auctions = [
-  {
+
+const auctions = [{
     name: "Giant BBQ",
     image: "https://i.imgur.com/yPreV19.png",
-    itemDetails: `Grilled chicken, beef, fish, sausages, bacon, 
+    itemName: `Grilled chicken, beef, fish, sausages, bacon, 
       vegetables served with chips.`,
     location: "Kimironko Market",
     owner: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
     endTime: 23492875,
     noOfBids: 27,
     index: 0,
-    startPrice: 100,
-    highestBid: 100,
+    startPrice: 50,
+    highestBid: 70,
     hasAuctionStarted: true,
     remainingTimeTillStart: 0,
+    biddingFee: 5,
+    hasPaidBidFee: false,
   },
   {
     name: "BBQ Chicken",
     image: "https://i.imgur.com/NMEzoYb.png",
-    itemDetails: `French fries and grilled chicken served with gacumbari 
+    itemName: `French fries and grilled chicken served with gacumbari 
       and avocados with cheese.`,
     location: "Afrika Fresh KG 541 St",
     owner: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea",
     endTime: 40000000,
     noOfBids: 12,
     index: 1,
-    startPrice: 200,
-    highestBid: 200,
+    startPrice: 60,
+    highestBid: 133,
     hasAuctionStarted: true,
     remainingTimeTillStart: 0,
+    biddingFee: 6,
+    hasPaidBidFee: true,
   },
   {
     name: "Beef burrito",
     image: "https://i.imgur.com/RNlv3S6.png",
-    itemDetails: `Homemade tortilla with your choice of filling, cheese, 
+    itemName: `Homemade tortilla with your choice of filling, cheese, 
       guacamole salsa with Mexican refried beans and rice.`,
     location: "Asili - KN 4 St",
     owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
     endTime: 36743893,
     noOfBids: 35,
     index: 2,
-    startPrice:300,
-    highestBid: 300,
+    startPrice: 70,
+    highestBid: 70,
     hasAuctionStarted: false,
     remainingTimeTillStart: 4000,
+    biddingFee: 7,
+    hasPaidBidFee: true,
   },
   {
     name: "Barbecue Pizza",
     image: "https://i.imgur.com/fpiDeFd.png",
-    itemDetails: `Barbecue Chicken Pizza: Chicken, gouda, pineapple, onions 
+    itemName: `Barbecue Chicken Pizza: Chicken, gouda, pineapple, onions 
       and house-made BBQ sauce.`,
     location: "Kigali Hut KG 7 Ave",
     owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
     endTime: 23492735,
     noOfBids: 2,
     index: 3,
-    startPrice: 400,
-    highestBid: 400,
+    startPrice: 80,
+    highestBid: 80,
     hasAuctionStarted: false,
     remainingTimeTillStart: 50000,
+    biddingFee: 8,
+    hasPaidBidFee: false,
   },
 ]
 
+
 function notification(_text) {
-  document.querySelector(".alert").style.display = "block"
   document.querySelector("#notification").textContent = _text
+  $('._alert').addClass("show");
+   $('._alert').removeClass("hide");
+   $('._alert').addClass("showAlert");
 }
-
 function notificationOff() {
-  document.querySelector(".alert").style.display = "none"
-}
+  $('._alert').removeClass("show");
+  $('._alert').addClass("hide");
+} 
 
-const connectCeloWallet = async function () {
+$(document).ready(()=>{
+  $('.close-btn').click(function(){
+    notificationOff()
+   });
+});
+const connectCeloWallet = async function() {
   if (window.celo) {
-      notification("⚠️ Please approve this DApp to use it.")
+    notification("⚠️ Please approve this DApp to use it.")
     try {
       await window.celo.enable()
       notificationOff()
@@ -96,7 +115,7 @@ const connectCeloWallet = async function () {
 
       const accounts = await kit.web3.eth.getAccounts()
       kit.defaultAccount = accounts[0]
-      
+
       contract = new kit.web3.eth.Contract(auctionAbi, AuctionContractAddress)
 
     } catch (error) {
@@ -112,22 +131,32 @@ async function approve(_price) {
 
   const result = await cUSDContract.methods
     .approve(AuctionContractAddress, _price)
-    .send({ from: kit.defaultAccount })
+    .send({
+      from: kit.defaultAccount
+    })
   return result
 }
 
 
-const getBalance = async function () {
+const getBalance = async function() {
   const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
   const cUSDBalance = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2)
   document.querySelector("#balance").textContent = cUSDBalance
 }
 
+const setUser = async function(){
+  document.getElementById("userAddr").innerHTML = ""
+  const newDiv = document.createElement("div")
+  newDiv.innerHTML = renderUserIcon(kit.defaultAccount)
+  document.getElementById("userAddr").appendChild(newDiv)
+}
 
-const getAuctions = async function() {
+const getRecentAuctions = async function() {
   const _auctionsLength = await contract.methods.getAuctionsLength().call()
-  const _auctions = []
-  for (let i = 0; i < _auctionsLength; i++) {
+  let i = _auctionsLength--
+  let n = _auctionsLength - 5
+  for (i; i > n; i--) {
+    auctions["hasPaidBidFee"] = await contract.methods.hasPaidBidFee(i).call()
     let _auction = new Promise(async (resolve, reject) => {
       let p = await contract.methods.getAuction(i).call()
       let q = await contract.methods.hasAuctionStarted(i).call()
@@ -135,7 +164,7 @@ const getAuctions = async function() {
         index: i,
         owner: p[0],
         image: p[1],
-        itemDetails: p[2],
+        itemName: p[2],
         endTime: p[3],
         startPrice: new BigNumber(p[4]),
         biddingFee: new BigNumber(p[5]),
@@ -151,39 +180,39 @@ const getAuctions = async function() {
 }
 
 function renderAuctions() {
-    document.getElementById("gallery").innerHTML = ""
-    auctions.forEach((_auction) => {
-      const newDiv = document.createElement("div")
-      newDiv.className = "col-md-4"
-      newDiv.innerHTML = auctionTemplate(_auction)
-      document.getElementById("gallery").appendChild(newDiv)
-    })
+  document.getElementById("gallery").innerHTML = ""
+  auctions.forEach((_auction) => {
+    const newDiv = document.createElement("div")
+    newDiv.className = "col-md-4"
+    newDiv.innerHTML = auctionTemplate(_auction)
+    document.getElementById("gallery").appendChild(newDiv)
+  })
 }
 
-function checkTime(_auction){
+function checkTime(_auction) {
   var endingTime = _auction.endTime;
   var remainingTime = _auction.remainingTimeTillStart;
-  if(_auction.hasAuctionStarted){
+  if (_auction.hasAuctionStarted) {
     var seconds = parseInt(endingTime, 10);
-    var days = Math.floor(seconds / (3600*24));
-    seconds  -= days*3600*24;
-    var hrs   = Math.floor(seconds / 3600);
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds -= days * 3600 * 24;
+    var hrs = Math.floor(seconds / 3600);
     return `
     <span> Auction Ends in ${days}d ${hrs}h</span>
   `
-  } else{
+  } else {
     var seconds = parseInt(remainingTime, 10);
-    var days = Math.floor(seconds / (3600*24));
-    seconds  -= days*3600*24;
-    var hrs   = Math.floor(seconds / 3600);
+    var days = Math.floor(seconds / (3600 * 24));
+    seconds -= days * 3600 * 24;
+    var hrs = Math.floor(seconds / 3600);
     return `
     <span> Auction Starts in ${hrs}h</span>
   `
   }
-  
+
 }
 
-function convertDays(_days){
+function convertDays(_days) {
   var seconds = Math.floor(_days * 24 * 3600);
   return seconds;
 }
@@ -199,8 +228,8 @@ function auctionTemplate(_auction) {
     <div class="translate-middle-y position-absolute top-0">
     ${identiconTemplate(_auction.owner)}
     </div>
-    <h6 class="card-title fs-4 fw-bold mt-2" style="min-height: 120px; text-transform:uppercase;">
-    ${_auction.itemDetails}
+    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 17px !important; min-height: 120px; text-transform:uppercase;">
+    ${_auction.itemName}
     </h6>
     <h3 class="card-text mt-4">
       $${_auction.highestBid}
@@ -233,92 +262,103 @@ function renderAuctionModal(index) {
   notificationOff()
 }
 
-function auctionModalTemplate(_auction){ 
-    return`
+function auctionModalTemplate(_auction) {
+  return `
 <div class="modal-content" style="background-color: rgb(171, 161, 163);">
   <div class="modal-header">
     <h5 class="modal-title" id="auctionTitle">Auction name</h5>
     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
-  <div class="modal-body flex_container" style="background-color: rgb(171, 161, 163);">
-    <div class="flex_row">
-      <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
-        <div class="carousel-indicators">
-          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
-          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
-          <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
+  <div class="modal-body" style="background-color: rgb(171, 161, 163);">
+    <div class="flex_container">
+      <div class="flex_row">
+        <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
+          <div class="carousel-indicators">
+            <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
+            <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
+            <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
+          </div>
+          <div class="carousel-inner">
+            <div class="carousel-item active">
+              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+            </div>
+            <div class="carousel-item">
+              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+            </div>
+            <div class="carousel-item">
+              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+            </div>
+          </div>
+          <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
+            <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Previous</span>
+          </button>
+          <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
+            <span class="carousel-control-next-icon" aria-hidden="true"></span>
+            <span class="visually-hidden">Next</span>
+          </button>
         </div>
-        <div class="carousel-inner">
-          <div class="carousel-item active">
-            <img src="https://mdbootstrap.com/img/new/slides/041.jpg" class="d-block w-100" alt="..." />
-          </div>
-          <div class="carousel-item">
-            <img src="https://mdbootstrap.com/img/new/slides/042.jpg" class="d-block w-100" alt="..." />
-          </div>
-          <div class="carousel-item">
-            <img src="https://mdbootstrap.com/img/new/slides/043.jpg" class="d-block w-100" alt="..." />
-          </div>
-        </div>
-        <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
-          <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Previous</span>
-        </button>
-        <button class="carousel-control-next" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="next">
-          <span class="carousel-control-next-icon" aria-hidden="true"></span>
-          <span class="visually-hidden">Next</span>
-        </button>
       </div>
+      <div class="flex_row">
+        <div>
+        <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 60px; text-transform:uppercase;">
+        ${_auction.itemName}
+        </h6>
+        </div>
+        <hr>
+        <div>
+          &emsp;&emsp;${checkTime(_auction)}
+        </div>
+        <div class="is-hidden">
+          <p>&emsp;&emsp;Time Left: Listing has Ended</p>
+        </div>
+        <hr>
+        <div>
+          <p>&emsp;&emsp;Start Price:&ensp;${_auction.startPrice}&nbsp;cUSD</p>
+          <p>&emsp;&emsp;Current Bid:&ensp;${_auction.highestBid}&nbsp;cUSD</p>
+        </div>
+        <div class="is-hidden">
+          &emsp;&emsp;<input type="text"> <button type="button" class="btn btn-dark">Place bid</button><br>
+        </div>
+        <div>
+          <br>
+          <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
+          &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidFee">
+            Pay Bid Fee
+          </button>
+          &emsp;&emsp;<button type="button" class="btn btn-dark is-hidden">
+            Withdraw Bid Fee
+          </button>
+        </div>
+      </div>     
     </div>
-    <div class="flex_row">
-      <div>
-        <h1>
-          &ensp;Item Details
-        </h1>
-      </div>
-      <hr>
-      <div>
-        <p>&emsp;&emsp;Starts in:</p>
-      </div>
-      <div class="is-hidden">
-        <p>&emsp;&emsp;Time Left:</p>
-      </div>
-      <div class="is-hidden">
-        <p>&emsp;&emsp;Time Left: Listing has Ended</p>
-      </div>
-      <hr>
-      <div>
-        <p>&emsp;&emsp;Start Price:&ensp;US $100.00</p>
-        <p>&emsp;&emsp;Current Bid:&ensp;US $100.00</p>
-      </div>
-      <div class="is-hidden">
-        &emsp;&emsp;<input type="text"> <button type="button" class="btn btn-dark">Place bid</button><br>
-      </div>
-      <div>
-        <br>
-        <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-        &emsp;&emsp;<button type="button" class="btn btn-dark">
-          Pay Bid Fee
-        </button>
-        &emsp;&emsp;<button type="button" class="btn btn-dark is-hidden">
-          Withdraw Bid Fee
-        </button>
-      </div>
+    <div style="height:500px; background-color:white;">
+      <p>
+        Item Details
+      </p>
     </div>
   </div>
 </div>
 
-`}
+`
+}
+
+function editAuctionModal(){
+  if(auctions.hasPaidBidFee){
+    
+  }
+}
 
 function identiconTemplate(_address) {
-    const icon = blockies
-      .create({
-        seed: _address,
-        size: 8,
-        scale: 16,
-      })
-      .toDataURL()
-  
-    return `
+  const icon = blockies
+    .create({
+      seed: _address,
+      size: 8,
+      scale: 16,
+    })
+    .toDataURL()
+
+  return `
     <div class="rounded-circle overflow-hidden d-inline-block border border-white border-2 shadow-sm m-0">
       <a href="https://alfajores-blockscout.celo-testnet.org/address/${_address}/transactions"
           target="_blank">
@@ -328,28 +368,49 @@ function identiconTemplate(_address) {
     `
 }
 
+function renderUserIcon(_address){
+  const icon = blockies
+  .create({
+    seed: _address,
+    size: 8,
+    scale: 16,
+  })
+  .toDataURL()
+
+return `
+<div id="userAddr" class="rounded-circle overflow-hidden d-inline-block border border-white border-2 shadow-sm">
+<a href="https://alfajores-blockscout.celo-testnet.org/address/${_address}/transactions"
+  target="_blank">
+  <img src="${icon}" width="35" alt="${_address}">
+</a>
+</div>
+  `
+}
+
 document
-.querySelector("#newAuctionBtn")
-.addEventListener("click", async (e) => {
-  const params = [
-    document.getElementById("newItemDetails").value,
-    document.getElementById("newImgUrl").value,
-    convertDays(document.getElementById("auctionEndTime").value),
-    new BigNumber(document.getElementById("startPrice").value)
-    .shiftedBy(ERC20_DECIMALS)
-    .toString()
-  ]
-  notification(`⌛ Adding New Auction...`)
-  try {
-    const result = await contract.methods
-      .createAuction(...params)
-      .send({ from: kit.defaultAccount })
-  } catch (error) {
-    notification(`⚠️ ${error}.`)
-  }
-  notification(`🎉 You successfully added a new auction.`)
-  getAuctions()
-})
+  .querySelector("#newAuctionBtn")
+  .addEventListener("click", async (e) => {
+    const params = [
+      document.getElementById("newitemName").value,
+      document.getElementById("newImgUrl").value,
+      convertDays(document.getElementById("listing-duration").value),
+      new BigNumber(document.getElementById("startPrice").value)
+      .shiftedBy(ERC20_DECIMALS)
+      .toString()
+    ]
+    notification(`⌛ Adding New Auction...`)
+    try {
+      const result = await contract.methods
+        .createAuction(...params)
+        .send({
+          from: kit.defaultAccount
+        })
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+    notification(`🎉 You successfully added a new auction.`)
+    getAuctions()
+  })
 
 document.querySelector("#gallery").addEventListener("click", async (e) => {
   if (e.target.className.includes("viewAuction")) {
@@ -357,13 +418,43 @@ document.querySelector("#gallery").addEventListener("click", async (e) => {
     renderAuctionModal(index)
   }
 })
+document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
+  if (e.target.className.includes("payBidFee")) {
+    $('#auctionModal').modal('hide');
+    const index = e.target.id
+    notification("⌛ Waiting for payment approval...")
+    try {
+      await approve(auctions[index].biddingFee)
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+    notification(`⌛ Awaiting payment of ${auctions[index].biddingFee}cUSD for Auction...`)
+    try {
+      const result = await contract.methods
+        .payBidFee(index)
+        .send({
+          from: kit.defaultAccount
+        })
+      notification(`🎉 You can now bid for "${auctions[index].itemName}".`)
+      //getProducts()
+      renderAuctions()
+      getBalance()
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+  }
+  if (e.target.className.includes("closeModal")) {
+    $('#auctionModal').modal('hide');
+  }
+})
 
 window.addEventListener('load', async () => {
   notification("⌛ Loading...")
   await connectCeloWallet()
   await getBalance()
-  //await getAuctions()
+  await setUser()
+  //await getRecentAuctions()
+  notification("⌛ Loading...")
   renderAuctions()
   notificationOff()
 });
-
