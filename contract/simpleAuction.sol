@@ -24,9 +24,6 @@ contract Auctions{
     uint index = 0;
     //uint auctionStartTime = 86400; //seconds
     uint auctionStartTime = 120; //test
-   
-    event highestBidIncrease(address bidder, uint amount);
-
     struct Auction {
         address payable beneficiary;
         string itemImage;
@@ -149,8 +146,7 @@ contract Auctions{
 
         auctions[_index].highestBidder = msg.sender;
         auctions[_index].highestBid = bidAmount;
-        
-        emit highestBidIncrease(msg.sender, bidAmount);
+
         auctions[_index].noOfBids++;
     }
 
@@ -181,6 +177,19 @@ contract Auctions{
     function _hasPaidBidFee(uint _index) public view returns(bool){
         return(
              auctions[_index].hasPaidBidFee[msg.sender]
+        );
+    }
+
+    function getBidDetails(uint _index) public view returns(address, uint){
+        return(
+            auctions[_index].highestBidder,
+            auctions[_index].highestBid
+        );
+    }
+
+    function hasAuctionEnded(uint _index) public view returns(bool){
+        return(
+            auctions[_index].auctionEnded
         );
     }
 }

@@ -13,7 +13,8 @@ const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 let contract
 let kit
-let hasPaidBidFee
+let recentAuctions
+let currentEventID
 
 
 const auctions = [{
@@ -32,6 +33,8 @@ const auctions = [{
     remainingTimeTillStart: 0,
     biddingFee: 5,
     hasPaidBidFee: false,
+    auctionEnded: false,
+    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb" ,
   },
   {
     name: "BBQ Chicken",
@@ -49,6 +52,8 @@ const auctions = [{
     remainingTimeTillStart: 0,
     biddingFee: 6,
     hasPaidBidFee: true,
+    auctionEnded: false,
+    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
   },
   {
     name: "Beef burrito",
@@ -66,6 +71,8 @@ const auctions = [{
     remainingTimeTillStart: 4000,
     biddingFee: 7,
     hasPaidBidFee: true,
+    auctionEnded: true,
+    highestBidder: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
   },
   {
     name: "Barbecue Pizza",
@@ -83,8 +90,11 @@ const auctions = [{
     remainingTimeTillStart: 50000,
     biddingFee: 8,
     hasPaidBidFee: false,
+    auctionEnded: false,
+    highestBidder: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea"
   },
 ]
+
 
 
 function notification(_text) {
@@ -151,37 +161,47 @@ const setUser = async function(){
   document.getElementById("userAddr").appendChild(newDiv)
 }
 
-const getRecentAuctions = async function() {
+const getAuctions = async function() {
   const _auctionsLength = await contract.methods.getAuctionsLength().call()
-  let i = _auctionsLength--
-  let n = _auctionsLength - 5
-  for (i; i > n; i--) {
-    auctions["hasPaidBidFee"] = await contract.methods._hasPaidBidFee(i).call()
-    let _auction = new Promise(async (resolve, reject) => {
-      let p = await contract.methods.getAuction(i).call()
-      let q = await contract.methods.hasAuctionStarted(i).call()
-      resolve({
-        index: i,
-        owner: p[0],
-        image: p[1],
-        itemName: p[2],
-        endTime: p[3],
-        startPrice: new BigNumber(p[4]),
-        biddingFee: new BigNumber(p[5]),
-        noOfBids: p[6],
-        hasAuctionStarted: q[0],
-        remainingTimeTillStart: q[1],
+  const _auctions = []
+  for (let i = 0; i >_auctionsLength; i++) {
+      let _auction = new Promise(async (resolve, reject) => {
+        let p = await contract.methods.getAuction(i).call()
+        let q = await contract.methods.hasAuctionStarted(i).call()
+        let r = await contract.methods._hasPaidBidFee(i).call()
+        let s = await contract.methods.getBidDetails(i).call()
+        let t = await contract.methods.hasAuctionEnded(i).call()
+        resolve({
+          index: i,
+          owner: p[0],
+          image: p[1],
+          itemName: p[2],
+          endTime: p[3],
+          startPrice: new BigNumber(p[4]),
+          biddingFee: new BigNumber(p[5]),
+          noOfBids: p[6],
+          hasAuctionStarted: q[0],
+          remainingTimeTillStart: q[1],
+          hasPaidBidFee: r,
+          highestBidder: s[0],
+          highestBid: s[1],
+          hasAuctionEnded: t,
+        })
       })
-    })
     _auctions.push(_auction)
+
   }
   auctions = await Promise.all(_auctions)
-  renderAuctions()
+  renderRecentAuctions()
 }
 
-function renderAuctions() {
+
+function renderRecentAuctions() {
+  let dummy = auctions;
+  dummy.push("");
+  recentAuctions = dummy.slice(-6, -1);
   document.getElementById("gallery").innerHTML = ""
-  auctions.forEach((_auction) => {
+  recentAuctions.forEach((_auction) => {
     const newDiv = document.createElement("div")
     newDiv.className = "col-md-4"
     newDiv.innerHTML = auctionTemplate(_auction)
@@ -222,7 +242,7 @@ function auctionTemplate(_auction) {
   <div class="card mb-4">
   <img class="card-img-top" src="${_auction.image}" alt="...">
   <div class="position-absolute top-0 end-0 bg-warning mt-4 px-2 py-1 rounded-start">
-  <i class="far fa-handshake"></i>&nbsp;${_auction.noOfBids} Bids
+  <i class="fas fa-gavel"></i>&nbsp;${_auction.noOfBids} Bids
   </div>
   <div class="card-body text-left p-4 position-relative">
     <div class="translate-middle-y position-absolute top-0">
@@ -258,6 +278,7 @@ function renderAuctionModal(index) {
   newDiv.className = "modal-content"
   newDiv.innerHTML = auctionModalTemplate(auctions[index])
   document.getElementById("auctionDisplay").appendChild(newDiv)
+  editAuctionModal(auctions[index])
   $("#auctionModal").modal('show');
   notificationOff()
 }
@@ -266,8 +287,10 @@ function auctionModalTemplate(_auction) {
   return `
 <div class="modal-content" style="background-color: rgb(171, 161, 163);">
   <div class="modal-header">
-    <h5 class="modal-title" id="auctionTitle">Auction name</h5>
-    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+    <div class="modal-title" id="auctionTitle">
+      <span class="navbar-brand mb-0 h1"> <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Crossed_Gavels.svg/200px-Crossed_Gavels.svg.png" height="30" alt="" loading="lazy" style="margin-top: -1px;" />BID-WAR</span>
+    </div>
+    <button type="button" class="btn-close closeModal" data-bs-dismiss="modal" aria-label="Close"></button>
   </div>
   <div class="modal-body" style="background-color: rgb(171, 161, 163);">
     <div class="flex_container">
@@ -306,35 +329,75 @@ function auctionModalTemplate(_auction) {
         </h6>
         </div>
         <hr>
-        <div>
+        <div id="time">
           &emsp;&emsp;${checkTime(_auction)}
         </div>
-        <div class="is-hidden">
+        <div id="ended">
           <p>&emsp;&emsp;Time Left: Listing has Ended</p>
         </div>
         <hr>
         <div>
           <p>&emsp;&emsp;Start Price:&ensp;${_auction.startPrice}&nbsp;cUSD</p>
-          <p>&emsp;&emsp;Current Bid:&ensp;${_auction.highestBid}&nbsp;cUSD</p>
+          <p>&emsp;&emsp;Highest Bid:&ensp;${_auction.highestBid}&nbsp;cUSD</p>
+          <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p>  
         </div>
-        <div class="is-hidden">
-          &emsp;&emsp;<input type="text"> <button type="button" class="btn btn-dark">Place bid</button><br>
+        <hr>
+        <div id="bid">
+          &emsp;&emsp;<input id="bidAmount" type="text" size="9">&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
         </div>
         <div>
           <br>
           <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-          &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidFee">
+          &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidBtn">
             Pay Bid Fee
           </button>
-          &emsp;&emsp;<button type="button" class="btn btn-dark is-hidden">
+          <button type="button" id="withdrawBtn" class="btn btn-dark">
             Withdraw Bid Fee
           </button>
         </div>
       </div>     
     </div>
-    <div style="height:500px; background-color:white;">
-      <p>
-        Item Details
+    <hr>
+    <div style="height:400px; background-color:white; overflow:auto">
+      <h4 style="padding-top: 20px; padding-left: 20px;">ITEM DETAILS</h4>
+      <p style="padding: 20px; margin:auto;">
+      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed euismod lacus, eget rutrum dolor. Ut placerat nulla a tellus lobortis, ac tincidunt mi viverra. Sed sit amet diam arcu. Etiam tincidunt tincidunt elit, a molestie mauris pretium eu. Suspendisse vitae dolor cursus, elementum leo id, faucibus enim. Vivamus pulvinar, ex a tincidunt pellentesque, odio libero varius ligula, ut porta justo orci vitae nisi. Ut lacinia elit quis finibus gravida. Quisque id eros sit amet elit condimentum rhoncus at at leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In risus justo, ornare at urna vel, placerat auctor felis. Etiam nibh lorem, fringilla suscipit metus non, commodo placerat neque. Integer tincidunt neque imperdiet bibendum feugiat. Integer fermentum, quam vitae posuere blandit, ante erat ornare nulla, ac dapibus purus dolor congue metus. Nullam et nunc libero. Aliquam gravida, lorem vel accumsan rutrum, tortor orci volutpat purus, at finibus justo tortor id lectus. Vestibulum gravida sapien id enim euismod, sed efficitur erat porttitor.
+
+      Sed semper risus porta pharetra vulputate. Morbi quis metus vel enim viverra pharetra in in sem. Morbi id turpis vitae felis tincidunt porta a condimentum metus. Maecenas tortor lectus, elementum sit amet rutrum ac, ullamcorper in lacus. Phasellus nec ipsum vestibulum velit congue mollis non vitae diam. Vestibulum dui tortor, mattis quis nibh in, ultrices porta sapien. Integer tortor lorem, imperdiet ut aliquet in, pharetra vel sapien. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam feugiat leo eget ligula pulvinar, vitae scelerisque dui faucibus. Donec justo arcu, molestie in metus in, aliquam dictum turpis. Nulla vel nibh placerat, faucibus quam non, dictum magna. Nullam ut mattis eros. Nullam viverra bibendum massa ut porta. Maecenas dolor libero, hendrerit ut sagittis quis, ornare eu est.
+      
+      Interdum et malesuada fames ac ante ipsum primis in faucibus. Mauris tempus lacus eu arcu lobortis consectetur. Cras libero ligula, eleifend non velit ut, venenatis blandit libero. Donec placerat aliquam metus, ac ornare magna pharetra in. In egestas tempor varius. Aenean rhoncus vel nisi tempus aliquam. Etiam in tortor finibus, iaculis velit id, facilisis velit.
+      
+      Cras dignissim justo sit amet felis venenatis, id facilisis elit euismod. Quisque ac augue consectetur, scelerisque ex at, tempus nulla. Nulla dictum nisl id urna rutrum, in bibendum metus pellentesque. Integer elementum rhoncus purus ut convallis. Phasellus fermentum augue eget nisl aliquam dignissim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean varius sapien non lectus iaculis venenatis at in velit. Vestibulum nec ligula sed sapien ultrices interdum non a nibh. Maecenas a bibendum nibh. Nunc et massa nisl. Sed mollis erat vitae est convallis, eget commodo neque luctus. Aliquam vitae fermentum orci. Duis vehicula quis ex ut dictum. Vivamus ac risus neque.
+      
+      Nullam a tortor lorem. Interdum et malesuada fames ac ante ipsum primis in faucibus. Suspendisse mollis tempus sem, vel volutpat turpis aliquam a. Nunc vitae tincidunt eros. Pellentesque ut urna quis urna iaculis maximus. Vestibulum nec nisi tempor, sagittis nibh vel, blandit elit. In ultrices euismod porta. Maecenas eleifend egestas ligula at vestibulum. Morbi in sapien gravida, lacinia sem quis, fermentum velit. Fusce rhoncus, urna at placerat lobortis, ante dolor vestibulum dolor, at viverra lectus justo id urna. Suspendisse ornare augue ut porta commodo.
+      
+      Vivamus sit amet elementum enim. Nunc quis rhoncus magna. Nam urna diam, egestas ac est in, dapibus mollis arcu. Integer gravida semper porttitor. Morbi mauris ipsum, laoreet et porttitor congue, imperdiet at enim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi ac blandit nibh, vitae viverra velit. Integer semper diam ac placerat fermentum.
+      
+      Curabitur nec varius orci. Maecenas sollicitudin facilisis orci, ac eleifend leo facilisis id. Phasellus egestas tristique erat. Fusce id mauris mauris. Aenean id ex eget ipsum semper iaculis. Nulla vel tincidunt sapien. Ut at massa elit. Aenean non semper orci. Nullam tempus, felis at tempor vestibulum, dolor ex suscipit mauris, ac bibendum velit sapien vel diam. Quisque finibus purus in neque pulvinar molestie vitae vehicula enim. Suspendisse gravida turpis a tempus auctor. Interdum et malesuada fames ac ante ipsum primis in faucibus.
+      
+      Sed congue imperdiet nibh non porta. Vivamus elementum sapien non tincidunt placerat. Maecenas scelerisque odio lacus, quis ullamcorper arcu fringilla ac. Sed quis pulvinar nisl. Nunc euismod massa sit amet lacus molestie, et sollicitudin urna efficitur. Suspendisse maximus tempus ligula, quis fermentum nunc pulvinar ut. Cras mattis tellus sit amet tellus vehicula, id porta elit congue. Suspendisse sollicitudin ipsum sed est egestas, sit amet efficitur augue pulvinar.
+      
+      Ut eu nunc enim. Morbi a mauris metus. Suspendisse odio risus, lacinia vitae convallis id, finibus quis sapien. Pellentesque scelerisque sagittis dictum. Mauris elementum pellentesque tortor sit amet mollis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed dui neque, efficitur eu lacus et, rutrum rhoncus lacus. In quis massa accumsan urna ultrices faucibus. Proin in leo vitae nunc aliquam dapibus in scelerisque lacus. Fusce congue tempus leo, a mattis metus fermentum a. In volutpat pulvinar imperdiet.
+      
+      Nullam dui magna, lacinia id tincidunt a, efficitur semper est. Curabitur varius diam eros, a tempor elit tincidunt ac. Cras id neque ut mi porttitor aliquet. Duis sit amet turpis ac magna imperdiet vulputate et quis ligula. Suspendisse potenti. Ut tincidunt lacus non mi fringilla imperdiet. Pellentesque venenatis nibh eget eros luctus fermentum. Praesent condimentum efficitur nisi a cursus. Pellentesque dictum orci dolor, vitae auctor urna elementum nec. Vestibulum malesuada ipsum ex, sed pellentesque orci viverra et.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed euismod lacus, eget rutrum dolor. Ut placerat nulla a tellus lobortis, ac tincidunt mi viverra. Sed sit amet diam arcu. Etiam tincidunt tincidunt elit, a molestie mauris pretium eu. Suspendisse vitae dolor cursus, elementum leo id, faucibus enim. Vivamus pulvinar, ex a tincidunt pellentesque, odio libero varius ligula, ut porta justo orci vitae nisi. Ut lacinia elit quis finibus gravida. Quisque id eros sit amet elit condimentum rhoncus at at leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In risus justo, ornare at urna vel, placerat auctor felis. Etiam nibh lorem, fringilla suscipit metus non, commodo placerat neque. Integer tincidunt neque imperdiet bibendum feugiat. Integer fermentum, quam vitae posuere blandit, ante erat ornare nulla, ac dapibus purus dolor congue metus. Nullam et nunc libero. Aliquam gravida, lorem vel accumsan rutrum, tortor orci volutpat purus, at finibus justo tortor id lectus. Vestibulum gravida sapien id enim euismod, sed efficitur erat porttitor.
+
+      Sed semper risus porta pharetra vulputate. Morbi quis metus vel enim viverra pharetra in in sem. Morbi id turpis vitae felis tincidunt porta a condimentum metus. Maecenas tortor lectus, elementum sit amet rutrum ac, ullamcorper in lacus. Phasellus nec ipsum vestibulum velit congue mollis non vitae diam. Vestibulum dui tortor, mattis quis nibh in, ultrices porta sapien. Integer tortor lorem, imperdiet ut aliquet in, pharetra vel sapien. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam feugiat leo eget ligula pulvinar, vitae scelerisque dui faucibus. Donec justo arcu, molestie in metus in, aliquam dictum turpis. Nulla vel nibh placerat, faucibus quam non, dictum magna. Nullam ut mattis eros. Nullam viverra bibendum massa ut porta. Maecenas dolor libero, hendrerit ut sagittis quis, ornare eu est.
+      
+      Interdum et malesuada fames ac ante ipsum primis in faucibus. Mauris tempus lacus eu arcu lobortis consectetur. Cras libero ligula, eleifend non velit ut, venenatis blandit libero. Donec placerat aliquam metus, ac ornare magna pharetra in. In egestas tempor varius. Aenean rhoncus vel nisi tempus aliquam. Etiam in tortor finibus, iaculis velit id, facilisis velit.
+      
+      Cras dignissim justo sit amet felis venenatis, id facilisis elit euismod. Quisque ac augue consectetur, scelerisque ex at, tempus nulla. Nulla dictum nisl id urna rutrum, in bibendum metus pellentesque. Integer elementum rhoncus purus ut convallis. Phasellus fermentum augue eget nisl aliquam dignissim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean varius sapien non lectus iaculis venenatis at in velit. Vestibulum nec ligula sed sapien ultrices interdum non a nibh. Maecenas a bibendum nibh. Nunc et massa nisl. Sed mollis erat vitae est convallis, eget commodo neque luctus. Aliquam vitae fermentum orci. Duis vehicula quis ex ut dictum. Vivamus ac risus neque.
+      
+      Nullam a tortor lorem. Interdum et malesuada fames ac ante ipsum primis in faucibus. Suspendisse mollis tempus sem, vel volutpat turpis aliquam a. Nunc vitae tincidunt eros. Pellentesque ut urna quis urna iaculis maximus. Vestibulum nec nisi tempor, sagittis nibh vel, blandit elit. In ultrices euismod porta. Maecenas eleifend egestas ligula at vestibulum. Morbi in sapien gravida, lacinia sem quis, fermentum velit. Fusce rhoncus, urna at placerat lobortis, ante dolor vestibulum dolor, at viverra lectus justo id urna. Suspendisse ornare augue ut porta commodo.
+      
+      Vivamus sit amet elementum enim. Nunc quis rhoncus magna. Nam urna diam, egestas ac est in, dapibus mollis arcu. Integer gravida semper porttitor. Morbi mauris ipsum, laoreet et porttitor congue, imperdiet at enim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi ac blandit nibh, vitae viverra velit. Integer semper diam ac placerat fermentum.
+      
+      Curabitur nec varius orci. Maecenas sollicitudin facilisis orci, ac eleifend leo facilisis id. Phasellus egestas tristique erat. Fusce id mauris mauris. Aenean id ex eget ipsum semper iaculis. Nulla vel tincidunt sapien. Ut at massa elit. Aenean non semper orci. Nullam tempus, felis at tempor vestibulum, dolor ex suscipit mauris, ac bibendum velit sapien vel diam. Quisque finibus purus in neque pulvinar molestie vitae vehicula enim. Suspendisse gravida turpis a tempus auctor. Interdum et malesuada fames ac ante ipsum primis in faucibus.
+      
+      Sed congue imperdiet nibh non porta. Vivamus elementum sapien non tincidunt placerat. Maecenas scelerisque odio lacus, quis ullamcorper arcu fringilla ac. Sed quis pulvinar nisl. Nunc euismod massa sit amet lacus molestie, et sollicitudin urna efficitur. Suspendisse maximus tempus ligula, quis fermentum nunc pulvinar ut. Cras mattis tellus sit amet tellus vehicula, id porta elit congue. Suspendisse sollicitudin ipsum sed est egestas, sit amet efficitur augue pulvinar.
+      
+      Ut eu nunc enim. Morbi a mauris metus. Suspendisse odio risus, lacinia vitae convallis id, finibus quis sapien. Pellentesque scelerisque sagittis dictum. Mauris elementum pellentesque tortor sit amet mollis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed dui neque, efficitur eu lacus et, rutrum rhoncus lacus. In quis massa accumsan urna ultrices faucibus. Proin in leo vitae nunc aliquam dapibus in scelerisque lacus. Fusce congue tempus leo, a mattis metus fermentum a. In volutpat pulvinar imperdiet.
+      
+      Nullam dui magna, lacinia id tincidunt a, efficitur semper est. Curabitur varius diam eros, a tempor elit tincidunt ac. Cras id neque ut mi porttitor aliquet. Duis sit amet turpis ac magna imperdiet vulputate et quis ligula. Suspendisse potenti. Ut tincidunt lacus non mi fringilla imperdiet. Pellentesque venenatis nibh eget eros luctus fermentum. Praesent condimentum efficitur nisi a cursus. Pellentesque dictum orci dolor, vitae auctor urna elementum nec. Vestibulum malesuada ipsum ex, sed pellentesque orci viverra et.
       </p>
     </div>
   </div>
@@ -343,9 +406,19 @@ function auctionModalTemplate(_auction) {
 `
 }
 
-function editAuctionModal(){
-  if(auctions.hasPaidBidFee){
-
+function editAuctionModal(_auction){
+  if(_auction.hasPaidBidFee){
+    $(".payBidBtn").addClass('is-hidden')
+  }else{
+    $("#withdrawBtn").addClass('is-hidden')
+    $("#bid").addClass('is-hidden')
+  }
+  if(_auction.auctionEnded){
+    $("#time").addClass('is-hidden')
+    $("#bid").addClass('is-hidden')
+    $(".payBidBtn").addClass('is-hidden')
+  }else{
+    $("#ended").addClass('is-hidden')
   }
 }
 
@@ -414,12 +487,12 @@ document
 
 document.querySelector("#gallery").addEventListener("click", async (e) => {
   if (e.target.className.includes("viewAuction")) {
-    const index = e.target.id
-    renderAuctionModal(index)
+    currentEventID = e.target.id
+    renderAuctionModal(currentEventID)
   }
 })
 document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
-  if (e.target.className.includes("payBidFee")) {
+  if (e.target.className.includes("payBidBtn")) {
     $('#auctionModal').modal('hide');
     const index = e.target.id
     notification("⌛ Waiting for payment approval...")
@@ -437,13 +510,35 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
         })
       notification(`🎉 You can now bid for "${auctions[index].itemName}".`)
       //getProducts()
-      renderAuctions()
+      renderRecentAuctions()
       getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
   }
   if (e.target.className.includes("closeModal")) {
+    $('#auctionModal').modal('hide');
+  }
+  if (e.target.className.includes("placeBid")) {
+    $('#auctionModal').modal('hide');
+    let bidAmount = document.getElementById("bidAmount").value
+    index = currentEventID
+    notification("⌛ Waiting for payment approval...")
+    try {
+      const result = await contract.methods
+        .placeBid(index, bidAmount)
+        .send({
+          from: kit.defaultAccount
+        })
+      notification(`🎉 You can have successfully bid for "${auctions[index].itemName}".`)
+      renderRecentAuctions()
+    }catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+
+  }
+  
+  if (e.target.className.includes("withdrawBtn")) {
     $('#auctionModal').modal('hide');
   }
 })
@@ -455,6 +550,6 @@ window.addEventListener('load', async () => {
   await setUser()
   //await getRecentAuctions()
   notification("⌛ Loading...")
-  renderAuctions()
+  renderRecentAuctions()
   notificationOff()
 });
