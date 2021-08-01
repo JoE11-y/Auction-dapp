@@ -208,7 +208,7 @@ function notificationOff() {
 } 
 
 function getRecent(){
-  let dummy = auctions;
+  let dummy = [...activeListings];
   dummy.push("");
   recentAuctions = dummy.slice(-4, -1);
 }
@@ -313,7 +313,6 @@ function editAuctionModal(_auction){
   }else{
     $("#ended").addClass('is-hidden')
   }
-
 }
 
 function setUserID(_auction){
