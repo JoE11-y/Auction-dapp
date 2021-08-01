@@ -33,8 +33,8 @@ const auctions = [{
     remainingTimeTillStart: 0,
     biddingFee: 5,
     hasPaidBidFee: false,
-    auctionEnded: false,
-    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb" ,
+    hasAuctionEnded: false,
+    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
   },
   {
     name: "BBQ Chicken",
@@ -52,7 +52,7 @@ const auctions = [{
     remainingTimeTillStart: 0,
     biddingFee: 6,
     hasPaidBidFee: true,
-    auctionEnded: false,
+    hasAuctionEnded: false,
     highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
   },
   {
@@ -71,7 +71,7 @@ const auctions = [{
     remainingTimeTillStart: 4000,
     biddingFee: 7,
     hasPaidBidFee: true,
-    auctionEnded: true,
+    hasAuctionEnded: true,
     highestBidder: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
   },
   {
@@ -90,7 +90,7 @@ const auctions = [{
     remainingTimeTillStart: 50000,
     biddingFee: 8,
     hasPaidBidFee: false,
-    auctionEnded: false,
+    hasAuctionEnded: false,
     highestBidder: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea"
   },
 ]
@@ -199,7 +199,7 @@ const getAuctions = async function() {
 function renderRecentAuctions() {
   let dummy = auctions;
   dummy.push("");
-  recentAuctions = dummy.slice(-6, -1);
+  recentAuctions = dummy.slice(-4, -1);
   document.getElementById("gallery").innerHTML = ""
   recentAuctions.forEach((_auction) => {
     const newDiv = document.createElement("div")
@@ -273,6 +273,7 @@ function auctionTemplate(_auction) {
 
 function renderAuctionModal(index) {
   notification("⌛ Loading...")
+  setUserID(auctions[index])
   document.getElementById("auctionDisplay").innerHTML = ""
   const newDiv = document.createElement("div")
   newDiv.className = "modal-content"
@@ -281,6 +282,20 @@ function renderAuctionModal(index) {
   editAuctionModal(auctions[index])
   $("#auctionModal").modal('show');
   notificationOff()
+}
+
+function setUserID(_auction){
+  if(kit.defaultAccount == _auction.owner){
+    _auction["isUserOwner"] == true;
+  }else{
+    _auction["isUserOwner"] == false;
+  }
+
+  if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
+    _auction["isUserWinner"] == true;
+  }else{
+    _auction["isUserWinner"] == false;
+  }
 }
 
 function auctionModalTemplate(_auction) {
@@ -491,6 +506,17 @@ document.querySelector("#gallery").addEventListener("click", async (e) => {
     renderAuctionModal(currentEventID)
   }
 })
+
+document.querySelector("#activeListings").addEventListener("click", async (e) => {
+  notification("⌛ Loading...")
+  document.getElementById("gallery").innerHTML = ""
+})
+
+document.querySelector("#closedListings").addEventListener("click", async (e) => {
+  notification("⌛ Loading...")
+  document.getElementById("gallery").innerHTML = ""
+})
+
 document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
   if (e.target.className.includes("payBidBtn")) {
     $('#auctionModal').modal('hide');

@@ -76,6 +76,7 @@
         .font_resize {
           font-size: medium;
         }
+
       }
 
       body {
@@ -117,7 +118,7 @@
         padding: 20px 40px;
         min-width: 420px;
         position: fixed;
-        left:0;
+        left: 0;
         top: 70px !important;
         border-radius: 4px;
         border-left: 8px solid #ffa502;
@@ -125,7 +126,7 @@
         opacity: 0;
         pointer-events: none;
         z-index: 2;
-        max-width:10000px;
+        max-width: 10000px;
       }
 
       ._alert.showAlert {
@@ -212,7 +213,6 @@
         font-size: 22px;
         line-height: 40px;
       }
-
     </style>
     <title>Bid War</title>
   </head>
@@ -237,8 +237,25 @@
               <span class="navbar-brand mb-0 h1">BID-WAR</span>
             </a>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="#">View All Auctions</a>
+              <li class="nav-item dropdown">
+                <a
+                  class="nav-link dropdown-toggle"
+                  href="#"
+                  id="navbarDropdownMenuLink"
+                  role="button"
+                  data-mdb-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  View All Auctions
+                </a>
+                <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
+                  <li>
+                    <a class="dropdown-item" id="activeListings" href="#">Active Listings</a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" id="closedListings" href="#">Closed Listings</a>
+                  </li>
+                </ul>
               </li>
               <li class="nav-item">
                 <a class="nav-link" href="#" data-bs-toggle="modal" data-bs-target="#newAuctionModal">

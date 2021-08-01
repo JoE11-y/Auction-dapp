@@ -85,7 +85,6 @@ contract Auctions{
             _auction.biddingFee = (_startPrice)/10;
             _auction.highestBid = _auction.startPrice;
             _auction.noOfBids = 0;
-            _auction.auctionEnded = false;
             _auction.auctionSettled = false;
 
             index++;
@@ -157,7 +156,6 @@ contract Auctions{
         );
 
         auctions[_index].auctionSettled = true;
-        auctions[_index].auctionEnded = true;
     }
     
     function getAuctionsLength() public view returns(uint){
@@ -188,8 +186,14 @@ contract Auctions{
     }
 
     function hasAuctionEnded(uint _index) public view returns(bool){
-        return(
-            auctions[_index].auctionEnded
-        );
+        if(block.timestamp > auctions[_index].auctionEndTime){
+            return(true);
+        }else{
+            return (false);
+        }
+
     }
+
+
+
 }
