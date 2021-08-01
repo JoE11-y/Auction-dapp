@@ -15,8 +15,12 @@ let contract
 let kit
 let recentAuctions
 let currentEventID
+let activeListings = [] 
+let closedListings = []
 
 
+
+// Celo Blockchain Functions
 const auctions = [{
     name: "Giant BBQ",
     image: "https://i.imgur.com/yPreV19.png",
@@ -95,24 +99,6 @@ const auctions = [{
   },
 ]
 
-
-
-function notification(_text) {
-  document.querySelector("#notification").textContent = _text
-  $('._alert').addClass("show");
-   $('._alert').removeClass("hide");
-   $('._alert').addClass("showAlert");
-}
-function notificationOff() {
-  $('._alert').removeClass("show");
-  $('._alert').addClass("hide");
-} 
-
-$(document).ready(()=>{
-  $('.close-btn').click(function(){
-    notificationOff()
-   });
-});
 const connectCeloWallet = async function() {
   if (window.celo) {
     notification("⚠️ Please approve this DApp to use it.")
@@ -192,22 +178,51 @@ const getAuctions = async function() {
 
   }
   auctions = await Promise.all(_auctions)
-  renderRecentAuctions()
+  sortListings()
+  getRecent()
+  renderAuctions(recentAuctions)
 }
 
 
-function renderRecentAuctions() {
+
+// Created Functions
+function sortListings(){
+  auctions.forEach((_auction) => {
+    if(_auction.hasAuctionEnded){
+      closedListings.push(_auction)
+    }else{
+      activeListings.push(_auction)
+    }
+  })
+}
+
+function notification(_text) {
+  document.querySelector("#notification").textContent = _text
+  $('._alert').addClass("show");
+   $('._alert').removeClass("hide");
+   $('._alert').addClass("showAlert");
+}
+function notificationOff() {
+  $('._alert').removeClass("show");
+  $('._alert').addClass("hide");
+} 
+
+function getRecent(){
   let dummy = auctions;
   dummy.push("");
   recentAuctions = dummy.slice(-4, -1);
+}
+
+function renderAuctions(_auctions) {
   document.getElementById("gallery").innerHTML = ""
-  recentAuctions.forEach((_auction) => {
+  _auctions.forEach((_auction) => {
     const newDiv = document.createElement("div")
     newDiv.className = "col-md-4"
     newDiv.innerHTML = auctionTemplate(_auction)
     document.getElementById("gallery").appendChild(newDiv)
   })
 }
+
 
 function checkTime(_auction) {
   var endingTime = _auction.endTime;
@@ -284,6 +299,23 @@ function renderAuctionModal(index) {
   notificationOff()
 }
 
+function editAuctionModal(_auction){
+  if(_auction.hasPaidBidFee){
+    $(".payBidBtn").addClass('is-hidden')
+  }else{
+    $("#withdrawBtn").addClass('is-hidden')
+    $("#bid").addClass('is-hidden')
+  }
+  if(_auction.hasAuctionEnded){
+    $("#time").addClass('is-hidden')
+    $("#bid").addClass('is-hidden')
+    $(".payBidBtn").addClass('is-hidden')
+  }else{
+    $("#ended").addClass('is-hidden')
+  }
+
+}
+
 function setUserID(_auction){
   if(kit.defaultAccount == _auction.owner){
     _auction["isUserOwner"] == true;
@@ -297,6 +329,7 @@ function setUserID(_auction){
     _auction["isUserWinner"] == false;
   }
 }
+
 
 function auctionModalTemplate(_auction) {
   return `
@@ -421,22 +454,6 @@ function auctionModalTemplate(_auction) {
 `
 }
 
-function editAuctionModal(_auction){
-  if(_auction.hasPaidBidFee){
-    $(".payBidBtn").addClass('is-hidden')
-  }else{
-    $("#withdrawBtn").addClass('is-hidden')
-    $("#bid").addClass('is-hidden')
-  }
-  if(_auction.auctionEnded){
-    $("#time").addClass('is-hidden')
-    $("#bid").addClass('is-hidden')
-    $(".payBidBtn").addClass('is-hidden')
-  }else{
-    $("#ended").addClass('is-hidden')
-  }
-}
-
 function identiconTemplate(_address) {
   const icon = blockies
     .create({
@@ -475,6 +492,13 @@ return `
   `
 }
 
+// DOM Queries
+$(document).ready(()=>{
+  $('.close-btn').click(function(){
+    notificationOff()
+   });
+});
+
 document
   .querySelector("#newAuctionBtn")
   .addEventListener("click", async (e) => {
@@ -509,12 +533,14 @@ document.querySelector("#gallery").addEventListener("click", async (e) => {
 
 document.querySelector("#activeListings").addEventListener("click", async (e) => {
   notification("⌛ Loading...")
-  document.getElementById("gallery").innerHTML = ""
+  renderAuctions(activeListings)
+  notification("Complete")
 })
 
 document.querySelector("#closedListings").addEventListener("click", async (e) => {
   notification("⌛ Loading...")
-  document.getElementById("gallery").innerHTML = ""
+  renderAuctions(closedListings)
+  notification("Complete")
 })
 
 document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
@@ -569,13 +595,16 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
   }
 })
 
+
 window.addEventListener('load', async () => {
   notification("⌛ Loading...")
   await connectCeloWallet()
   await getBalance()
   await setUser()
-  //await getRecentAuctions()
+  //await getAuctions()
   notification("⌛ Loading...")
-  renderRecentAuctions()
+  sortListings()
+  getRecent()
+  renderAuctions(recentAuctions)
   notificationOff()
 });
