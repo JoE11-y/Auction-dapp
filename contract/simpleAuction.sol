@@ -59,7 +59,7 @@ contract Auctions{
     }
     
     modifier hasPaidBidFee(uint _index){
-        require(auctions[_index].hasPaidBidFee[msg.sender] != true, "You have not paid bidding fee");
+        require(auctions[_index].hasPaidBidFee[msg.sender] == true, "You have not paid bidding fee");
         _;
     }
 

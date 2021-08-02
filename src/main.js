@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x82220Ab813545e6942911964147DED841b8Bf347"
+const AuctionContractAddress = "0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -138,12 +138,14 @@ async function approve(_price) {
 
 
 const getBalance = async function() {
+  notification("⌛ Loading...")
   const totalBalance = await kit.getTotalBalance(kit.defaultAccount)
   const cUSDBalance = totalBalance.cUSD.shiftedBy(-ERC20_DECIMALS).toFixed(2)
   document.querySelector("#balance").textContent = cUSDBalance
 }
 
 const setUser = async function() {
+  notification("⌛ Loading...")
   document.getElementById("userAddr").innerHTML = ""
   const newDiv = document.createElement("div")
   newDiv.innerHTML = renderUserIcon(kit.defaultAccount)
@@ -151,9 +153,10 @@ const setUser = async function() {
 }
 
 const getAuctions = async function() {
+  notification("⌛ Loading...")
   const _auctionsLength = await contract.methods.getAuctionsLength().call()
   const _auctions = []
-  for (let i = 0; i > _auctionsLength; i++) {
+  for (let i = 0; i < _auctionsLength; i++) {
     let _auction = new Promise(async (resolve, reject) => {
       let p = await contract.methods.getAuction(i).call()
       let q = await contract.methods.getPricing(i).call()
@@ -169,14 +172,14 @@ const getAuctions = async function() {
         itemName: p[1],
         itemDescription: p[2],
         image: p[3],
-        endTime: [p3],
+        endTime: p[4],
         startPrice: new BigNumber(q[0]),
         biddingFee: new BigNumber(q[1]),
         hasAuctionStarted: r[0],
         remainingTimeTillStart: r[1],
         hasPaidBidFee: s,
         highestBidder: t[0],
-        highestBid: t[1],
+        highestBid: new BigNumber(t[1]),
         hasAuctionEnded: u,
         hasPlacedBid: v,
         noOfBids: w,
@@ -189,9 +192,12 @@ const getAuctions = async function() {
   sortListings()
   setUserID()
   getRecent()
+  notification("⌛ Loading...")
   renderAuctions(recentAuctions)
+  notification("⌛ Loading...")
   displayUserOutBid()
   displayWinningNotification()
+  notificationOff()
 }
 
 
@@ -259,6 +265,7 @@ function getRecent() {
 }
 
 function renderAuctions(_auctions) {
+  notification("⌛ Loading...")
   document.getElementById("gallery").innerHTML = ""
   _auctions.forEach((_auction) => {
     const newDiv = document.createElement("div")
@@ -277,17 +284,28 @@ function checkTime(_auction) {
     var days = Math.floor(seconds / (3600 * 24));
     seconds -= days * 3600 * 24;
     var hrs = Math.floor(seconds / 3600);
+    seconds -= hrs * 3600;
+    var mins = Math.floor(seconds / 60);
     return `
-    <span> Auction Ends in ${days}d ${hrs}h</span>
+    <span> Auction Ends in ${days}d ${hrs}h ${mins}m</span>
   `
   } else {
     var seconds = parseInt(remainingTime, 10);
     var days = Math.floor(seconds / (3600 * 24));
     seconds -= days * 3600 * 24;
     var hrs = Math.floor(seconds / 3600);
-    return `
-    <span> Auction Starts in ${hrs}h</span>
-  `
+    seconds -= hrs * 3600;
+    var mins = Math.floor(seconds / 60);
+    if(hrs == 0){
+      return `
+    <span> Auction Starts in ${mins}m </span>
+    `
+    }else{
+      return `
+    <span> Auction Starts in ${hrs}h ${mins}m</span>
+    `
+    }
+    
   }
 
 }
@@ -308,11 +326,11 @@ function auctionTemplate(_auction) {
     <div class="translate-middle-y position-absolute top-0">
     ${identiconTemplate(_auction.owner)}
     </div>
-    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 17px !important; min-height: 120px; text-transform:uppercase;">
+    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 120px; text-transform:uppercase;">
     ${_auction.itemName}
     </h6>
     <h3 class="card-text mt-4">
-      $${_auction.highestBid}
+      ${_auction.highestBid.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD 
     </h3>
     <p class="card-text mt-4">
     <i class="fas fa-hourglass-half"></i>&nbsp;
@@ -410,7 +428,7 @@ function auctionModalTemplate(_auction) {
       </div>
       <div class="flex_row">
         <div>
-        <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 60px; text-transform:uppercase;">
+        <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 25px !important; min-height: 60px; text-transform:uppercase;">
         ${_auction.itemName}
         </h6>
         </div>
@@ -423,8 +441,8 @@ function auctionModalTemplate(_auction) {
         </div>
         <hr>
         <div>
-          <p>&emsp;&emsp;Start Price:&ensp;${_auction.startPrice}&nbsp;cUSD</p>
-          <p>&emsp;&emsp;Highest Bid:&ensp;${_auction.highestBid}&nbsp;cUSD</p>
+          <p>&emsp;&emsp;Start Price:&ensp; ${_auction.startPrice.shiftedBy(-ERC20_DECIMALS).toFixed(2)} &nbsp;cUSD</p>
+          <p>&emsp;&emsp;Highest Bid:&ensp;${_auction.highestBid.shiftedBy(-ERC20_DECIMALS).toFixed(2)}&nbsp;cUSD</p>
           <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p>  
         </div>
         <hr>
@@ -447,7 +465,7 @@ function auctionModalTemplate(_auction) {
       </div>     
     </div>
     <hr>
-    <div style="height:400px; background-color:white; overflow:auto">
+    <div style="height:300px; background-color:white; overflow:auto">
       <h4 style="padding-top: 20px; padding-left: 20px;">ITEM DETAILS</h4>
       <p style="padding: 20px; margin:auto;">
         ${_auction.itemDescription}
@@ -550,6 +568,10 @@ document.querySelector("#closedListings").addEventListener("click", async (e) =>
 })
 
 document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
+  if (e.target.className.includes("closeModal")) {
+    $('#auctionModal').modal('hide');
+    }
+
   // Paying Bid Fee
   if (e.target.className.includes("payBidBtn")) {
     $('#auctionModal').modal('hide');
@@ -560,7 +582,7 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
-    notification(`⌛ Awaiting payment of ${auctions[index].biddingFee}cUSD for Auction...`)
+    notification(`⌛ Awaiting payment of ${auctions[index].biddingFee.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD for Auction...`)
     try {
       const result4 = await contract.methods
         .payBidFee(index)
@@ -576,14 +598,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
     }
   }
 
-  $('#button').click(disable);
   if (e.target.className.includes("placeBid")) {
-    if (!$('#bidAmount').val()) {
-      return;
-    }
     $('#auctionModal').modal('hide');
-    let bidAmount = document.getElementById("bidAmount").value
-    index = currentAuctionID
+    let bidAmount = new BigNumber(document.getElementById("bidAmount").value).shiftedBy(ERC20_DECIMALS).toString()
+    const index = currentAuctionID
     notification("⌛ Placing your bid...")
     try {
       const result3 = await contract.methods
@@ -592,7 +610,7 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You have successfully placed a bid for "${auctions[index].itemName}".`)
-      renderRecentAuctions()
+      getAuctions()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -609,7 +627,7 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
         .send({
           from: kit.defaultAccount
         })
-      notification(`🎉 Withdrawal of Bid Fee ${auctions[index].biddingFee}cUSD complete.`)
+      notification(`🎉 Withdrawal of Bid Fee ${auctions[index].biddingFee.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
       getAuctions()
       getBalance()
     } catch (error) {
@@ -618,7 +636,7 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
   }
 
   // Settle Auction
-  if (e.target.className.includes("buyBtn")) {
+  if (e.target.className.includes("settleBtn")) {
     const index = e.target.id
     notification("⌛ Waiting for payment approval...")
     try {
@@ -641,10 +659,6 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
     }
   }
 
-  if (e.target.className.includes("closeModal")) {
-    $('#auctionModal').modal('hide');
-  }
-
 })
 
 
@@ -653,10 +667,6 @@ window.addEventListener('load', async () => {
   await connectCeloWallet()
   await getBalance()
   await setUser()
-  //await getAuctions()
-  notification("⌛ Loading...")
-  sortListings()
-  getRecent()
-  renderAuctions(recentAuctions)
+  await getAuctions()
   notificationOff()
 });
