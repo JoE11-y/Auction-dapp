@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.6+commit.11564f7e"
+		"version": "0.8.4+commit.c7e474f2"
 	},
 	"language": "Solidity",
 	"output": {
@@ -11,23 +11,23 @@
 				"type": "constructor"
 			},
 			{
-				"anonymous": false,
 				"inputs": [
 					{
-						"indexed": false,
-						"internalType": "address",
-						"name": "bidder",
-						"type": "address"
-					},
-					{
-						"indexed": false,
 						"internalType": "uint256",
-						"name": "amount",
+						"name": "_index",
 						"type": "uint256"
 					}
 				],
-				"name": "highestBidIncrease",
-				"type": "event"
+				"name": "_hasPaidBidFee",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
 			},
 			{
 				"inputs": [
@@ -96,6 +96,38 @@
 						"internalType": "uint256",
 						"name": "",
 						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [],
+				"name": "getAuctionsLength",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "getBidDetails",
+				"outputs": [
+					{
+						"internalType": "address",
+						"name": "",
+						"type": "address"
 					},
 					{
 						"internalType": "uint256",
@@ -107,8 +139,76 @@
 				"type": "function"
 			},
 			{
-				"inputs": [],
-				"name": "getAuctionsLength",
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "hasAuctionEnded",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "hasAuctionStarted",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					},
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "hasPlacedBid",
+				"outputs": [
+					{
+						"internalType": "bool",
+						"name": "",
+						"type": "bool"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "noOfBids",
 				"outputs": [
 					{
 						"internalType": "uint256",
@@ -156,11 +256,6 @@
 						"internalType": "uint256",
 						"name": "_index",
 						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "_highestBid",
-						"type": "uint256"
 					}
 				],
 				"name": "settleAuction",
@@ -195,9 +290,9 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contract/simpleAuction.sol": "Auctions"
+			"simpleAuction.sol": "Auctions"
 		},
-		"evmVersion": "berlin",
+		"evmVersion": "istanbul",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -209,12 +304,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"contract/simpleAuction.sol": {
-			"keccak256": "0x42be369ab2e618b2e29874f71ce612538f11ba60199b4fd25666bf279af59660",
+		"simpleAuction.sol": {
+			"keccak256": "0xa964d0d008c496dead85539f43e40944e51dc027d14707c940b30cf432767ee8",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://9c1f64c00253b58d363ac3a4382e12ce0aea3d5f0ee2304f4d9b2ff702c48bd4",
-				"dweb:/ipfs/QmPdnV3trQNT7TTuJvC9xqaYHuTnhxHK6n9z8rGXZmAqRK"
+				"bzz-raw://23be17b4f7a9aca80156fcfd9586d40558a3709d2006dc5660b018ee47b1ac93",
+				"dweb:/ipfs/QmS3hLRVjivFqrR3DSZ5t2toJt3HJktC6dWrR4mPvNt5Ky"
 			]
 		}
 	},

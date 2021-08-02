@@ -14,8 +14,8 @@ const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 let contract
 let kit
 let recentAuctions
-let currentEventID
-let activeListings = [] 
+let currentAuctionID
+let activeListings = []
 let closedListings = []
 
 
@@ -140,7 +140,7 @@ const getBalance = async function() {
   document.querySelector("#balance").textContent = cUSDBalance
 }
 
-const setUser = async function(){
+const setUser = async function() {
   document.getElementById("userAddr").innerHTML = ""
   const newDiv = document.createElement("div")
   newDiv.innerHTML = renderUserIcon(kit.defaultAccount)
@@ -150,30 +150,33 @@ const setUser = async function(){
 const getAuctions = async function() {
   const _auctionsLength = await contract.methods.getAuctionsLength().call()
   const _auctions = []
-  for (let i = 0; i >_auctionsLength; i++) {
-      let _auction = new Promise(async (resolve, reject) => {
-        let p = await contract.methods.getAuction(i).call()
-        let q = await contract.methods.hasAuctionStarted(i).call()
-        let r = await contract.methods._hasPaidBidFee(i).call()
-        let s = await contract.methods.getBidDetails(i).call()
-        let t = await contract.methods.hasAuctionEnded(i).call()
-        resolve({
-          index: i,
-          owner: p[0],
-          image: p[1],
-          itemName: p[2],
-          endTime: p[3],
-          startPrice: new BigNumber(p[4]),
-          biddingFee: new BigNumber(p[5]),
-          noOfBids: p[6],
-          hasAuctionStarted: q[0],
-          remainingTimeTillStart: q[1],
-          hasPaidBidFee: r,
-          highestBidder: s[0],
-          highestBid: s[1],
-          hasAuctionEnded: t,
-        })
+  for (let i = 0; i > _auctionsLength; i++) {
+    let _auction = new Promise(async (resolve, reject) => {
+      let p = await contract.methods.getAuction(i).call()
+      let q = await contract.methods.hasAuctionStarted(i).call()
+      let r = await contract.methods._hasPaidBidFee(i).call()
+      let s = await contract.methods.getBidDetails(i).call()
+      let t = await contract.methods.hasAuctionEnded(i).call()
+      let u = await contract.methods.hasPlacedBid(i).call()
+      let v = await contract.methods.noOfBids(i).call()
+      resolve({
+        index: i,
+        owner: p[0],
+        image: p[1],
+        itemName: p[2],
+        endTime: p[3],
+        startPrice: new BigNumber(p[4]),
+        biddingFee: new BigNumber(p[5]),
+        hasAuctionStarted: q[0],
+        remainingTimeTillStart: q[1],
+        hasPaidBidFee: r,
+        highestBidder: s[0],
+        highestBid: s[1],
+        hasAuctionEnded: t,
+        hasPlacedBid: u,
+        noOfBids: v,
       })
+    })
     _auctions.push(_auction)
 
   }
@@ -182,42 +185,51 @@ const getAuctions = async function() {
   setUserID()
   getRecent()
   renderAuctions(recentAuctions)
+  displayUserOutBid()
   displayWinningNotification()
 }
 
 
 
 // Created Functions
-function setUserID(){
+function setUserID() {
   auctions.forEach((_auction) => {
-    if(kit.defaultAccount == _auction.owner){
+    if (kit.defaultAccount == _auction.owner) {
       _auction["isUserOwner"] == true;
-    }else{
+    } else {
       _auction["isUserOwner"] == false;
     }
-    if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
+    if (_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder) {
       _auction["isUserWinner"] == true;
-    }else{
+    } else {
       _auction["isUserWinner"] == false;
     }
   })
 }
 
-function displayWinningNotification(){
-  auctions.forEach((_auction) => {
-    if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
+function displayWinningNotification() {
+  closedListings.forEach((_auction) => {
+    if (_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder) {
       notification(`🎉 Congratulations you won auction ${_auction.name}.`)
-      setTimeout(function() {
-      }, 30000);
+      setTimeout(function() {}, 30000);
     }
   })
 }
 
-function sortListings(){
+function displayUserOutBid() {
+  activeListings.forEach((_auction) => {
+    if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
+      notification(`🎉 Your Bid for ${_auction.name} has been outbid.`)
+      setTimeout(function() {}, 30000);
+    }
+  })
+}
+
+function sortListings() {
   auctions.forEach((_auction) => {
-    if(_auction.hasAuctionEnded){
+    if (_auction.hasAuctionEnded) {
       closedListings.push(_auction)
-    }else{
+    } else {
       activeListings.push(_auction)
     }
   })
@@ -226,15 +238,16 @@ function sortListings(){
 function notification(_text) {
   document.querySelector("#notification").textContent = _text
   $('._alert').addClass("show");
-   $('._alert').removeClass("hide");
-   $('._alert').addClass("showAlert");
+  $('._alert').removeClass("hide");
+  $('._alert').addClass("showAlert");
 }
+
 function notificationOff() {
   $('._alert').removeClass("show");
   $('._alert').addClass("hide");
-} 
+}
 
-function getRecent(){
+function getRecent() {
   let dummy = [...activeListings];
   dummy.push("");
   recentAuctions = dummy.slice(-4, -1);
@@ -325,32 +338,26 @@ function renderAuctionModal(index) {
   notificationOff()
 }
 
-function editAuctionModal(_auction){
-  if(!_auction.hasAuctionStarted){
+function editAuctionModal(_auction) {
+  if (!_auction.hasAuctionStarted) {
     $("#auctiondets").addClass('is-hidden')
   }
-  if(_auction.hasAuctionEnded){
+  if (_auction.hasAuctionEnded) {
     $("#time").addClass('is-hidden')
     $("#bid").addClass('is-hidden')
     $(".payBidBtn").addClass('is-hidden')
-  }else{
+  } else {
     $("#ended").addClass('is-hidden')
   }
-  if(_auction.isUserWinner){
-    $("#settleBtn").removeClass('is-hidden')
-  }
-  if(_auction.hasPaidBidFee){
+  if (_auction.hasPaidBidFee) {
     $(".payBidBtn").addClass('is-hidden')
-  }else{
+  } else {
     $("#withdrawBtn").addClass('is-hidden')
     $("#bid").addClass('is-hidden')
   }
-  if(_auction.hasAuctionEnded){
-    $("#time").addClass('is-hidden')
+  if (_auction.isUserWinner) {
+    $("#settleBtn").removeClass('is-hidden')
     $("#bid").addClass('is-hidden')
-    $(".payBidBtn").addClass('is-hidden')
-  }else{
-    $("#ended").addClass('is-hidden')
   }
 }
 
@@ -418,21 +425,19 @@ function auctionModalTemplate(_auction) {
         <hr>
         <div id="auctiondets">
           <div id="bid">
-            &emsp;&emsp;<input id="bidAmount" type="text" size="9">&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
+            &emsp;&emsp;<input id="bidAmount" type="text" size="9" required>&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
           </div>
-          <div>
           <br>
-            <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-            &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidBtn">
-            Pay Bid Fee
-            </button>
-            <button type="button" id="withdrawBtn" class="btn btn-dark">
-              Withdraw Bid Fee
-            </button>
-            <button type="button" id="settleBtn" class="btn btn-dark is-hidden">
+          <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
+          &emsp;&emsp;<button type="button" id="payBidBtn" class="btn btn-dark payBidBtn">
+          Pay Bid Fee
+          </button>
+          <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee">
+            Withdraw Bid Fee
+          </button>
+          <button type="button" id="settleBtn" class="btn btn-dark is-hidden">
             Settle Bid
-            </button>
-          </div>
+          </button>
         </div>
       </div>     
     </div>
@@ -504,16 +509,16 @@ function identiconTemplate(_address) {
     `
 }
 
-function renderUserIcon(_address){
+function renderUserIcon(_address) {
   const icon = blockies
-  .create({
-    seed: _address,
-    size: 8,
-    scale: 16,
-  })
-  .toDataURL()
+    .create({
+      seed: _address,
+      size: 8,
+      scale: 16,
+    })
+    .toDataURL()
 
-return `
+  return `
 <div id="userAddr" class="rounded-circle overflow-hidden d-inline-block border border-white border-2 shadow-sm">
 <a href="https://alfajores-blockscout.celo-testnet.org/address/${_address}/transactions"
   target="_blank">
@@ -524,10 +529,10 @@ return `
 }
 
 // DOM Queries
-$(document).ready(()=>{
-  $('.close-btn').click(function(){
+$(document).ready(() => {
+  $('.close-btn').click(function() {
     notificationOff()
-   });
+  });
 });
 
 document
@@ -557,8 +562,8 @@ document
 
 document.querySelector("#gallery").addEventListener("click", async (e) => {
   if (e.target.className.includes("viewAuction")) {
-    currentEventID = e.target.id
-    renderAuctionModal(currentEventID)
+    currentAuctionID = e.target.id
+    renderAuctionModal(currentAuctionID)
   }
 })
 
@@ -575,9 +580,10 @@ document.querySelector("#closedListings").addEventListener("click", async (e) =>
 })
 
 document.querySelector("#auctionDisplay").addEventListener("click", async (e) => {
+  // Paying Bid Fee
   if (e.target.className.includes("payBidBtn")) {
     $('#auctionModal').modal('hide');
-    const index = e.target.id
+    const index = currentAuctionID
     notification("⌛ Waiting for payment approval...")
     try {
       await approve(auctions[index].biddingFee)
@@ -586,44 +592,89 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
     }
     notification(`⌛ Awaiting payment of ${auctions[index].biddingFee}cUSD for Auction...`)
     try {
-      const result = await contract.methods
+      const result4 = await contract.methods
         .payBidFee(index)
         .send({
           from: kit.defaultAccount
         })
       notification(`🎉 You can now bid for "${auctions[index].itemName}".`)
       //getProducts()
-      renderRecentAuctions()
+      getAuctions()
       getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
   }
-  if (e.target.className.includes("closeModal")) {
-    $('#auctionModal').modal('hide');
-  }
+
+  $('#button').click(disable);
   if (e.target.className.includes("placeBid")) {
+    if (!$('#bidAmount').val()) {
+      return;
+    }
     $('#auctionModal').modal('hide');
     let bidAmount = document.getElementById("bidAmount").value
-    index = currentEventID
-    notification("⌛ Waiting for payment approval...")
+    index = currentAuctionID
+    notification("⌛ Placing your bid...")
     try {
-      const result = await contract.methods
+      const result3 = await contract.methods
         .placeBid(index, bidAmount)
         .send({
           from: kit.defaultAccount
         })
-      notification(`🎉 You can have successfully bid for "${auctions[index].itemName}".`)
+      notification(`🎉 You have successfully placed a bid for "${auctions[index].itemName}".`)
       renderRecentAuctions()
-    }catch (error) {
+    } catch (error) {
       notification(`⚠️ ${error}.`)
     }
-
   }
-  
-  if (e.target.className.includes("withdrawBtn")) {
+
+  // Withdrawing Bid Fee
+  if (e.target.className.includes("withdrawBidFee")) {
+    $('#auctionModal').modal('hide');
+    const index = currentAuctionID
+    notification(`⌛ Withdrawing funds`)
+    try {
+      const result2 = await contract.methods
+        .withdrawBidFee(index)
+        .send({
+          from: kit.defaultAccount
+        })
+      notification(`🎉 Withdrawal of Bid Fee ${auctions[index].biddingFee}cUSD complete.`)
+      getAuctions()
+      getBalance()
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+  }
+
+  // Settle Auction
+  if (e.target.className.includes("buyBtn")) {
+    const index = e.target.id
+    notification("⌛ Waiting for payment approval...")
+    try {
+      await approve(auctions[index].highestBid)
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+    notification(`⌛ Awaiting payment for "${auctions[index].itemName}"...`)
+    try {
+      const result1 = await contract.methods
+        .settleAuction(index)
+        .send({
+          from: kit.defaultAccount
+        })
+      notification(`🎉 You successfully bought "${auctions[index].itemName}".`)
+      getAuctions()
+      getBalance()
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+  }
+
+  if (e.target.className.includes("closeModal")) {
     $('#auctionModal').modal('hide');
   }
+
 })
 
 

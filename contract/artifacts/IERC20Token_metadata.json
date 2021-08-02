@@ -1,6 +1,6 @@
 {
 	"compiler": {
-		"version": "0.8.6+commit.11564f7e"
+		"version": "0.8.4+commit.c7e474f2"
 	},
 	"language": "Solidity",
 	"output": {
@@ -202,9 +202,9 @@
 	},
 	"settings": {
 		"compilationTarget": {
-			"contract/simpleAuction.sol": "IERC20Token"
+			"simpleAuction.sol": "IERC20Token"
 		},
-		"evmVersion": "berlin",
+		"evmVersion": "istanbul",
 		"libraries": {},
 		"metadata": {
 			"bytecodeHash": "ipfs"
@@ -216,12 +216,12 @@
 		"remappings": []
 	},
 	"sources": {
-		"contract/simpleAuction.sol": {
-			"keccak256": "0x42be369ab2e618b2e29874f71ce612538f11ba60199b4fd25666bf279af59660",
+		"simpleAuction.sol": {
+			"keccak256": "0xa964d0d008c496dead85539f43e40944e51dc027d14707c940b30cf432767ee8",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://9c1f64c00253b58d363ac3a4382e12ce0aea3d5f0ee2304f4d9b2ff702c48bd4",
-				"dweb:/ipfs/QmPdnV3trQNT7TTuJvC9xqaYHuTnhxHK6n9z8rGXZmAqRK"
+				"bzz-raw://23be17b4f7a9aca80156fcfd9586d40558a3709d2006dc5660b018ee47b1ac93",
+				"dweb:/ipfs/QmS3hLRVjivFqrR3DSZ5t2toJt3HJktC6dWrR4mPvNt5Ky"
 			]
 		}
 	},

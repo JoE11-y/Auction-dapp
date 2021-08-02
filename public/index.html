@@ -213,6 +213,7 @@
         font-size: 22px;
         line-height: 40px;
       }
+
     </style>
     <title>Bid War</title>
   </head>
@@ -238,14 +239,7 @@
             </a>
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
               <li class="nav-item dropdown">
-                <a
-                  class="nav-link dropdown-toggle"
-                  href="#"
-                  id="navbarDropdownMenuLink"
-                  role="button"
-                  data-mdb-toggle="dropdown"
-                  aria-expanded="false"
-                >
+                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink" role="button" data-mdb-toggle="dropdown" aria-expanded="false">
                   View All Auctions
                 </a>
                 <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
@@ -320,7 +314,7 @@
               <div class="form-row">
                 <div class="mb-3">
                   <label for="itemName" class="form-label">Item Name</label>
-                  <input type="text" class="form-control" id="itemName" placeholder="Enter item name">
+                  <input type="text" class="form-control" id="itemName" placeholder="Enter item name" required>
                 </div>
                 <div class="mb-3">
                   <label for="item-desc" class="form-label">Item Description</label>
@@ -328,15 +322,15 @@
                 </div>
                 <div class="mb-3">
                   <label for="newImgUrl" class="form-label">Item Image</label>
-                  <input type="text" class="form-control" id="newImgUrl" placeholder="Enter Image url">
+                  <input type="text" class="form-control" id="newImgUrl" placeholder="Enter Image url" required>
                 </div>
                 <div class="mb-3">
                   <label for="listing-duration" class="form-label">Listing Duration</label>
-                  <input type="number" class="form-control" id="listing-duration" placeholder="Enter Listing Duration in days between 1 to 365 e.g 5 days">
+                  <input type="number" class="form-control" id="listing-duration" placeholder="Enter Listing Duration in days between 1 to 365 e.g 5 days" required>
                 </div>
                 <div class="mb-3">
                   <label for="startPrice" class="form-label">Listing price</label>
-                  <input type="text" class="form-control" id="item-startPrice" placeholder="Enter Listing start Price">
+                  <input type="text" class="form-control" id="item-startPrice" placeholder="Enter Listing start Price" required>
                 </div>
               </div>
             </form>

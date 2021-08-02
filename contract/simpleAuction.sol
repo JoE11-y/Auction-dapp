@@ -40,6 +40,7 @@ contract Auctions{
 
         
         mapping (address => bool) hasPaidBidFee;
+        mapping (address => bool) hasPlacedBid;
     }
 
     mapping(uint => Auction) internal auctions;
@@ -47,7 +48,7 @@ contract Auctions{
 
     modifier onlyAfter(uint _time){
         // i.e function can only be activated after the time runs out
-        require(block.timestamp > _time);
+        require(block.timestamp > _time,"This action cannot be performed now");
         _;
     }
     
@@ -96,7 +97,6 @@ contract Auctions{
         string memory,
         uint,
         uint,
-        uint,
         uint
     ) {
         uint endTime = auctions[_index].auctionEndTime - block.timestamp;
@@ -106,8 +106,7 @@ contract Auctions{
             auctions[_index].itemDetails,
             endTime,
             auctions[_index].startPrice,
-            auctions[_index].biddingFee,
-            auctions[_index].noOfBids
+            auctions[_index].biddingFee
         );
     }
 
@@ -120,9 +119,6 @@ contract Auctions{
     }
 
     function withdrawBidFee(uint _index) public onlyAfter(auctions[_index].auctionEndTime) hasPaidBidFee(_index){ 
-        //if (auctions[_index].hasPaidBidFee[msg.sender] != true) {
-           // revert("You have not paid bidding fee");
-        //}
         if (msg.sender == auctions[_index].highestBidder){
             require(auctions[_index].auctionSettled == true, "You cannot withdraw Bid Fee until you have settled the auction.");
             amount = auctions[_index].biddingFee;
@@ -147,11 +143,12 @@ contract Auctions{
         auctions[_index].highestBid = bidAmount;
 
         auctions[_index].noOfBids++;
+        auctions[_index].hasPlacedBid[msg.sender] = true;
     }
 
-    function settleAuction(uint _index, uint _highestBid) public payable onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index){
+    function settleAuction(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index) public payable {
         require(
-            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, auctions[_index].beneficiary, _highestBid),
+            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, auctions[_index].beneficiary, auctions[_index].highestBid),
                 "Transfer failed"
         );
 
@@ -191,7 +188,16 @@ contract Auctions{
         }else{
             return (false);
         }
+    }
 
+    function hasPlacedBid(uint _index) public view returns(bool){
+        return (
+            auctions[_index].hasPlacedBid[msg.sender]
+        );
+    }
+    
+    function noOfBids(uint _index) public view returns(uint){
+        return(auctions[_index].noOfBids);
     }
 
 
