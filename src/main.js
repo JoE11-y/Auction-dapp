@@ -156,28 +156,30 @@ const getAuctions = async function() {
   for (let i = 0; i > _auctionsLength; i++) {
     let _auction = new Promise(async (resolve, reject) => {
       let p = await contract.methods.getAuction(i).call()
-      let q = await contract.methods.hasAuctionStarted(i).call()
-      let r = await contract.methods._hasPaidBidFee(i).call()
-      let s = await contract.methods.getBidDetails(i).call()
-      let t = await contract.methods.hasAuctionEnded(i).call()
-      let u = await contract.methods.hasPlacedBid(i).call()
-      let v = await contract.methods.noOfBids(i).call()
+      let q = await contract.methods.getPricing(i).call()
+      let r = await contract.methods.hasAuctionStarted(i).call()
+      let s = await contract.methods._hasPaidBidFee(i).call()
+      let t = await contract.methods.getBidDetails(i).call()
+      let u = await contract.methods.hasAuctionEnded(i).call()
+      let v = await contract.methods.hasPlacedBid(i).call()
+      let w = await contract.methods.noOfBids(i).call()
       resolve({
         index: i,
         owner: p[0],
-        image: p[1],
-        itemName: p[2],
-        endTime: p[3],
-        startPrice: new BigNumber(p[4]),
-        biddingFee: new BigNumber(p[5]),
-        hasAuctionStarted: q[0],
-        remainingTimeTillStart: q[1],
-        hasPaidBidFee: r,
-        highestBidder: s[0],
-        highestBid: s[1],
-        hasAuctionEnded: t,
-        hasPlacedBid: u,
-        noOfBids: v,
+        itemName: p[1],
+        itemDescription: p[2],
+        image: p[3],
+        endTime: [p3],
+        startPrice: new BigNumber(q[0]),
+        biddingFee: new BigNumber(q[1]),
+        hasAuctionStarted: r[0],
+        remainingTimeTillStart: r[1],
+        hasPaidBidFee: s,
+        highestBidder: t[0],
+        highestBid: t[1],
+        hasAuctionEnded: u,
+        hasPlacedBid: v,
+        noOfBids: w,
       })
     })
     _auctions.push(_auction)
@@ -448,43 +450,7 @@ function auctionModalTemplate(_auction) {
     <div style="height:400px; background-color:white; overflow:auto">
       <h4 style="padding-top: 20px; padding-left: 20px;">ITEM DETAILS</h4>
       <p style="padding: 20px; margin:auto;">
-      Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed euismod lacus, eget rutrum dolor. Ut placerat nulla a tellus lobortis, ac tincidunt mi viverra. Sed sit amet diam arcu. Etiam tincidunt tincidunt elit, a molestie mauris pretium eu. Suspendisse vitae dolor cursus, elementum leo id, faucibus enim. Vivamus pulvinar, ex a tincidunt pellentesque, odio libero varius ligula, ut porta justo orci vitae nisi. Ut lacinia elit quis finibus gravida. Quisque id eros sit amet elit condimentum rhoncus at at leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In risus justo, ornare at urna vel, placerat auctor felis. Etiam nibh lorem, fringilla suscipit metus non, commodo placerat neque. Integer tincidunt neque imperdiet bibendum feugiat. Integer fermentum, quam vitae posuere blandit, ante erat ornare nulla, ac dapibus purus dolor congue metus. Nullam et nunc libero. Aliquam gravida, lorem vel accumsan rutrum, tortor orci volutpat purus, at finibus justo tortor id lectus. Vestibulum gravida sapien id enim euismod, sed efficitur erat porttitor.
-
-      Sed semper risus porta pharetra vulputate. Morbi quis metus vel enim viverra pharetra in in sem. Morbi id turpis vitae felis tincidunt porta a condimentum metus. Maecenas tortor lectus, elementum sit amet rutrum ac, ullamcorper in lacus. Phasellus nec ipsum vestibulum velit congue mollis non vitae diam. Vestibulum dui tortor, mattis quis nibh in, ultrices porta sapien. Integer tortor lorem, imperdiet ut aliquet in, pharetra vel sapien. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam feugiat leo eget ligula pulvinar, vitae scelerisque dui faucibus. Donec justo arcu, molestie in metus in, aliquam dictum turpis. Nulla vel nibh placerat, faucibus quam non, dictum magna. Nullam ut mattis eros. Nullam viverra bibendum massa ut porta. Maecenas dolor libero, hendrerit ut sagittis quis, ornare eu est.
-      
-      Interdum et malesuada fames ac ante ipsum primis in faucibus. Mauris tempus lacus eu arcu lobortis consectetur. Cras libero ligula, eleifend non velit ut, venenatis blandit libero. Donec placerat aliquam metus, ac ornare magna pharetra in. In egestas tempor varius. Aenean rhoncus vel nisi tempus aliquam. Etiam in tortor finibus, iaculis velit id, facilisis velit.
-      
-      Cras dignissim justo sit amet felis venenatis, id facilisis elit euismod. Quisque ac augue consectetur, scelerisque ex at, tempus nulla. Nulla dictum nisl id urna rutrum, in bibendum metus pellentesque. Integer elementum rhoncus purus ut convallis. Phasellus fermentum augue eget nisl aliquam dignissim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean varius sapien non lectus iaculis venenatis at in velit. Vestibulum nec ligula sed sapien ultrices interdum non a nibh. Maecenas a bibendum nibh. Nunc et massa nisl. Sed mollis erat vitae est convallis, eget commodo neque luctus. Aliquam vitae fermentum orci. Duis vehicula quis ex ut dictum. Vivamus ac risus neque.
-      
-      Nullam a tortor lorem. Interdum et malesuada fames ac ante ipsum primis in faucibus. Suspendisse mollis tempus sem, vel volutpat turpis aliquam a. Nunc vitae tincidunt eros. Pellentesque ut urna quis urna iaculis maximus. Vestibulum nec nisi tempor, sagittis nibh vel, blandit elit. In ultrices euismod porta. Maecenas eleifend egestas ligula at vestibulum. Morbi in sapien gravida, lacinia sem quis, fermentum velit. Fusce rhoncus, urna at placerat lobortis, ante dolor vestibulum dolor, at viverra lectus justo id urna. Suspendisse ornare augue ut porta commodo.
-      
-      Vivamus sit amet elementum enim. Nunc quis rhoncus magna. Nam urna diam, egestas ac est in, dapibus mollis arcu. Integer gravida semper porttitor. Morbi mauris ipsum, laoreet et porttitor congue, imperdiet at enim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi ac blandit nibh, vitae viverra velit. Integer semper diam ac placerat fermentum.
-      
-      Curabitur nec varius orci. Maecenas sollicitudin facilisis orci, ac eleifend leo facilisis id. Phasellus egestas tristique erat. Fusce id mauris mauris. Aenean id ex eget ipsum semper iaculis. Nulla vel tincidunt sapien. Ut at massa elit. Aenean non semper orci. Nullam tempus, felis at tempor vestibulum, dolor ex suscipit mauris, ac bibendum velit sapien vel diam. Quisque finibus purus in neque pulvinar molestie vitae vehicula enim. Suspendisse gravida turpis a tempus auctor. Interdum et malesuada fames ac ante ipsum primis in faucibus.
-      
-      Sed congue imperdiet nibh non porta. Vivamus elementum sapien non tincidunt placerat. Maecenas scelerisque odio lacus, quis ullamcorper arcu fringilla ac. Sed quis pulvinar nisl. Nunc euismod massa sit amet lacus molestie, et sollicitudin urna efficitur. Suspendisse maximus tempus ligula, quis fermentum nunc pulvinar ut. Cras mattis tellus sit amet tellus vehicula, id porta elit congue. Suspendisse sollicitudin ipsum sed est egestas, sit amet efficitur augue pulvinar.
-      
-      Ut eu nunc enim. Morbi a mauris metus. Suspendisse odio risus, lacinia vitae convallis id, finibus quis sapien. Pellentesque scelerisque sagittis dictum. Mauris elementum pellentesque tortor sit amet mollis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed dui neque, efficitur eu lacus et, rutrum rhoncus lacus. In quis massa accumsan urna ultrices faucibus. Proin in leo vitae nunc aliquam dapibus in scelerisque lacus. Fusce congue tempus leo, a mattis metus fermentum a. In volutpat pulvinar imperdiet.
-      
-      Nullam dui magna, lacinia id tincidunt a, efficitur semper est. Curabitur varius diam eros, a tempor elit tincidunt ac. Cras id neque ut mi porttitor aliquet. Duis sit amet turpis ac magna imperdiet vulputate et quis ligula. Suspendisse potenti. Ut tincidunt lacus non mi fringilla imperdiet. Pellentesque venenatis nibh eget eros luctus fermentum. Praesent condimentum efficitur nisi a cursus. Pellentesque dictum orci dolor, vitae auctor urna elementum nec. Vestibulum malesuada ipsum ex, sed pellentesque orci viverra et.Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer sed euismod lacus, eget rutrum dolor. Ut placerat nulla a tellus lobortis, ac tincidunt mi viverra. Sed sit amet diam arcu. Etiam tincidunt tincidunt elit, a molestie mauris pretium eu. Suspendisse vitae dolor cursus, elementum leo id, faucibus enim. Vivamus pulvinar, ex a tincidunt pellentesque, odio libero varius ligula, ut porta justo orci vitae nisi. Ut lacinia elit quis finibus gravida. Quisque id eros sit amet elit condimentum rhoncus at at leo. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. In risus justo, ornare at urna vel, placerat auctor felis. Etiam nibh lorem, fringilla suscipit metus non, commodo placerat neque. Integer tincidunt neque imperdiet bibendum feugiat. Integer fermentum, quam vitae posuere blandit, ante erat ornare nulla, ac dapibus purus dolor congue metus. Nullam et nunc libero. Aliquam gravida, lorem vel accumsan rutrum, tortor orci volutpat purus, at finibus justo tortor id lectus. Vestibulum gravida sapien id enim euismod, sed efficitur erat porttitor.
-
-      Sed semper risus porta pharetra vulputate. Morbi quis metus vel enim viverra pharetra in in sem. Morbi id turpis vitae felis tincidunt porta a condimentum metus. Maecenas tortor lectus, elementum sit amet rutrum ac, ullamcorper in lacus. Phasellus nec ipsum vestibulum velit congue mollis non vitae diam. Vestibulum dui tortor, mattis quis nibh in, ultrices porta sapien. Integer tortor lorem, imperdiet ut aliquet in, pharetra vel sapien. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aliquam feugiat leo eget ligula pulvinar, vitae scelerisque dui faucibus. Donec justo arcu, molestie in metus in, aliquam dictum turpis. Nulla vel nibh placerat, faucibus quam non, dictum magna. Nullam ut mattis eros. Nullam viverra bibendum massa ut porta. Maecenas dolor libero, hendrerit ut sagittis quis, ornare eu est.
-      
-      Interdum et malesuada fames ac ante ipsum primis in faucibus. Mauris tempus lacus eu arcu lobortis consectetur. Cras libero ligula, eleifend non velit ut, venenatis blandit libero. Donec placerat aliquam metus, ac ornare magna pharetra in. In egestas tempor varius. Aenean rhoncus vel nisi tempus aliquam. Etiam in tortor finibus, iaculis velit id, facilisis velit.
-      
-      Cras dignissim justo sit amet felis venenatis, id facilisis elit euismod. Quisque ac augue consectetur, scelerisque ex at, tempus nulla. Nulla dictum nisl id urna rutrum, in bibendum metus pellentesque. Integer elementum rhoncus purus ut convallis. Phasellus fermentum augue eget nisl aliquam dignissim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Aenean varius sapien non lectus iaculis venenatis at in velit. Vestibulum nec ligula sed sapien ultrices interdum non a nibh. Maecenas a bibendum nibh. Nunc et massa nisl. Sed mollis erat vitae est convallis, eget commodo neque luctus. Aliquam vitae fermentum orci. Duis vehicula quis ex ut dictum. Vivamus ac risus neque.
-      
-      Nullam a tortor lorem. Interdum et malesuada fames ac ante ipsum primis in faucibus. Suspendisse mollis tempus sem, vel volutpat turpis aliquam a. Nunc vitae tincidunt eros. Pellentesque ut urna quis urna iaculis maximus. Vestibulum nec nisi tempor, sagittis nibh vel, blandit elit. In ultrices euismod porta. Maecenas eleifend egestas ligula at vestibulum. Morbi in sapien gravida, lacinia sem quis, fermentum velit. Fusce rhoncus, urna at placerat lobortis, ante dolor vestibulum dolor, at viverra lectus justo id urna. Suspendisse ornare augue ut porta commodo.
-      
-      Vivamus sit amet elementum enim. Nunc quis rhoncus magna. Nam urna diam, egestas ac est in, dapibus mollis arcu. Integer gravida semper porttitor. Morbi mauris ipsum, laoreet et porttitor congue, imperdiet at enim. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas. Morbi ac blandit nibh, vitae viverra velit. Integer semper diam ac placerat fermentum.
-      
-      Curabitur nec varius orci. Maecenas sollicitudin facilisis orci, ac eleifend leo facilisis id. Phasellus egestas tristique erat. Fusce id mauris mauris. Aenean id ex eget ipsum semper iaculis. Nulla vel tincidunt sapien. Ut at massa elit. Aenean non semper orci. Nullam tempus, felis at tempor vestibulum, dolor ex suscipit mauris, ac bibendum velit sapien vel diam. Quisque finibus purus in neque pulvinar molestie vitae vehicula enim. Suspendisse gravida turpis a tempus auctor. Interdum et malesuada fames ac ante ipsum primis in faucibus.
-      
-      Sed congue imperdiet nibh non porta. Vivamus elementum sapien non tincidunt placerat. Maecenas scelerisque odio lacus, quis ullamcorper arcu fringilla ac. Sed quis pulvinar nisl. Nunc euismod massa sit amet lacus molestie, et sollicitudin urna efficitur. Suspendisse maximus tempus ligula, quis fermentum nunc pulvinar ut. Cras mattis tellus sit amet tellus vehicula, id porta elit congue. Suspendisse sollicitudin ipsum sed est egestas, sit amet efficitur augue pulvinar.
-      
-      Ut eu nunc enim. Morbi a mauris metus. Suspendisse odio risus, lacinia vitae convallis id, finibus quis sapien. Pellentesque scelerisque sagittis dictum. Mauris elementum pellentesque tortor sit amet mollis. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Sed dui neque, efficitur eu lacus et, rutrum rhoncus lacus. In quis massa accumsan urna ultrices faucibus. Proin in leo vitae nunc aliquam dapibus in scelerisque lacus. Fusce congue tempus leo, a mattis metus fermentum a. In volutpat pulvinar imperdiet.
-      
-      Nullam dui magna, lacinia id tincidunt a, efficitur semper est. Curabitur varius diam eros, a tempor elit tincidunt ac. Cras id neque ut mi porttitor aliquet. Duis sit amet turpis ac magna imperdiet vulputate et quis ligula. Suspendisse potenti. Ut tincidunt lacus non mi fringilla imperdiet. Pellentesque venenatis nibh eget eros luctus fermentum. Praesent condimentum efficitur nisi a cursus. Pellentesque dictum orci dolor, vitae auctor urna elementum nec. Vestibulum malesuada ipsum ex, sed pellentesque orci viverra et.
+        ${_auction.itemDescription}
       </p>
     </div>
   </div>
@@ -542,7 +508,8 @@ document
   .querySelector("#newAuctionBtn")
   .addEventListener("click", async (e) => {
     const params = [
-      document.getElementById("newitemName").value,
+      document.getElementById("itemName").value,
+      document.getElementById("item-desc").value,
       document.getElementById("newImgUrl").value,
       convertDays(document.getElementById("listing-duration").value),
       new BigNumber(document.getElementById("startPrice").value)

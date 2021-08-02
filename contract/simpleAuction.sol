@@ -27,7 +27,8 @@ contract Auctions{
     struct Auction {
         address payable beneficiary;
         string itemImage;
-        string itemDetails;
+        string itemName;
+        string itemDescription;
         uint auctionStartTime;
         uint auctionEndTime;
         uint startPrice;
@@ -71,14 +72,16 @@ contract Auctions{
     //Functions
 
     function createAuction(
-        string memory _itemDetails,
+        string memory _itemName,
+        string memory _itemDescription,
         string memory _itemImage,
         uint _endTime,
         uint _startPrice
         )public {
             Auction storage _auction = auctions[index];
             _auction.beneficiary = payable(msg.sender);
-            _auction.itemDetails = _itemDetails;
+            _auction.itemName = _itemName;
+            _auction.itemDescription = _itemDescription;
             _auction.itemImage = _itemImage;
             _auction.auctionStartTime = block.timestamp + auctionStartTime;
             _auction.auctionEndTime = _auction.auctionStartTime + _endTime;
@@ -95,21 +98,29 @@ contract Auctions{
         address payable,
         string memory,
         string memory,
-        uint,
-        uint,
+        string memory,
         uint
     ) {
         uint endTime = auctions[_index].auctionEndTime - block.timestamp;
         return(
             auctions[_index].beneficiary,
+            auctions[_index].itemName,
+            auctions[_index].itemDescription,
             auctions[_index].itemImage,
-            auctions[_index].itemDetails,
-            endTime,
+            endTime
+        );
+    }
+    
+    function getPricing(uint _index) public view returns(
+        uint, 
+        uint
+    ){  
+        return(
             auctions[_index].startPrice,
             auctions[_index].biddingFee
         );
     }
-
+    
     function payBidFee(uint _index) public payable{
         require(
             IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), auctions[_index].biddingFee),

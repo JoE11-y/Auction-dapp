@@ -33,7 +33,12 @@
 				"inputs": [
 					{
 						"internalType": "string",
-						"name": "_itemDetails",
+						"name": "_itemName",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "_itemDescription",
 						"type": "string"
 					},
 					{
@@ -83,14 +88,9 @@
 						"type": "string"
 					},
 					{
-						"internalType": "uint256",
+						"internalType": "string",
 						"name": "",
-						"type": "uint256"
-					},
-					{
-						"internalType": "uint256",
-						"name": "",
-						"type": "uint256"
+						"type": "string"
 					},
 					{
 						"internalType": "uint256",
@@ -128,6 +128,30 @@
 						"internalType": "address",
 						"name": "",
 						"type": "address"
+					},
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
+					}
+				],
+				"stateMutability": "view",
+				"type": "function"
+			},
+			{
+				"inputs": [
+					{
+						"internalType": "uint256",
+						"name": "_index",
+						"type": "uint256"
+					}
+				],
+				"name": "getPricing",
+				"outputs": [
+					{
+						"internalType": "uint256",
+						"name": "",
+						"type": "uint256"
 					},
 					{
 						"internalType": "uint256",
@@ -305,11 +329,11 @@
 	},
 	"sources": {
 		"simpleAuction.sol": {
-			"keccak256": "0xa964d0d008c496dead85539f43e40944e51dc027d14707c940b30cf432767ee8",
+			"keccak256": "0x3d4e000cc7a7f93ea98a1040355fe86a0848b610ef38c1dace944d1569279bb8",
 			"license": "MIT",
 			"urls": [
-				"bzz-raw://23be17b4f7a9aca80156fcfd9586d40558a3709d2006dc5660b018ee47b1ac93",
-				"dweb:/ipfs/QmS3hLRVjivFqrR3DSZ5t2toJt3HJktC6dWrR4mPvNt5Ky"
+				"bzz-raw://f97e385019a36fa6fddc1b3c4105249e362d732279cf5c2a0e18bbfa40ca4927",
+				"dweb:/ipfs/QmamtmE87tF6hmpEn66wBpHUdXmRgoxuVBWFFX8UTxhLjU"
 			]
 		}
 	},
