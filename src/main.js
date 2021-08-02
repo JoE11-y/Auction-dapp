@@ -7,6 +7,8 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
+//0xCb0f3bA05E367f8302553B31f7557fbcc86fe469
+//0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36
 const AuctionContractAddress = "0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
@@ -279,6 +281,13 @@ function renderAuctions(_auctions) {
 function checkTime(_auction) {
   var endingTime = _auction.endTime;
   var remainingTime = _auction.remainingTimeTillStart;
+
+  if (endingTime == 0){
+    return `
+    <span> Time Left: Listing has Ended</span>
+    `
+  }
+
   if (_auction.hasAuctionStarted) {
     var seconds = parseInt(endingTime, 10);
     var days = Math.floor(seconds / (3600 * 24));
@@ -286,9 +295,20 @@ function checkTime(_auction) {
     var hrs = Math.floor(seconds / 3600);
     seconds -= hrs * 3600;
     var mins = Math.floor(seconds / 60);
-    return `
-    <span> Auction Ends in ${days}d ${hrs}h ${mins}m</span>
-  `
+    seconds -= mins * 60;
+    if(hrs == 0){
+      return `
+    <span> Auction Ends in ${mins}m </span>
+    `
+    }else if(mins == 0){
+      return `
+      <span> Auction Ends in ${seconds}s </span>
+    `
+    }else {
+      return `
+    <span> Auction Ends in ${hrs}h ${mins}m</span>
+    `
+    }
   } else {
     var seconds = parseInt(remainingTime, 10);
     var days = Math.floor(seconds / (3600 * 24));
@@ -296,11 +316,16 @@ function checkTime(_auction) {
     var hrs = Math.floor(seconds / 3600);
     seconds -= hrs * 3600;
     var mins = Math.floor(seconds / 60);
+    seconds -= min * 60;
     if(hrs == 0){
       return `
     <span> Auction Starts in ${mins}m </span>
     `
-    }else{
+    }else if(mins == 0){
+      return `
+      <span> Auction Starts in ${seconds}s </span>
+    `
+    }else {
       return `
     <span> Auction Starts in ${hrs}h ${mins}m</span>
     `
@@ -366,12 +391,10 @@ function editAuctionModal(_auction) {
     $("#auctiondets").addClass('is-hidden')
   }
   if (_auction.hasAuctionEnded) {
-    $("#time").addClass('is-hidden')
     $("#bid").addClass('is-hidden')
     $(".payBidBtn").addClass('is-hidden')
-  } else {
-    $("#ended").addClass('is-hidden')
-  }
+  } 
+
   if (_auction.hasPaidBidFee) {
     $(".payBidBtn").addClass('is-hidden')
   } else {
@@ -435,9 +458,6 @@ function auctionModalTemplate(_auction) {
         <hr>
         <div id="time">
           &emsp;&emsp;${checkTime(_auction)}
-        </div>
-        <div id="ended">
-          <p>&emsp;&emsp;Time Left: Listing has Ended</p>
         </div>
         <hr>
         <div>

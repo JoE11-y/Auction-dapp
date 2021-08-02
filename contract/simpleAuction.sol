@@ -101,7 +101,12 @@ contract Auctions{
         string memory,
         uint
     ) {
-        uint endTime = auctions[_index].auctionEndTime - block.timestamp;
+        uint endTime;
+        if(block.timestamp > auctions[_index].auctionEndTime){
+            endTime = 0;           
+        } else{
+            endTime = auctions[_index].auctionEndTime - block.timestamp;  
+        }
         return(
             auctions[_index].beneficiary,
             auctions[_index].itemName,
