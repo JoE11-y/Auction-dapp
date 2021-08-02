@@ -15,6 +15,7 @@ let contract
 let kit
 let recentAuctions
 let currentAuctionID
+let auctions = []
 let activeListings = []
 let closedListings = []
 
