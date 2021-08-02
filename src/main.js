@@ -179,13 +179,40 @@ const getAuctions = async function() {
   }
   auctions = await Promise.all(_auctions)
   sortListings()
+  setUserID()
   getRecent()
   renderAuctions(recentAuctions)
+  displayWinningNotification()
 }
 
 
 
 // Created Functions
+function setUserID(){
+  auctions.forEach((_auction) => {
+    if(kit.defaultAccount == _auction.owner){
+      _auction["isUserOwner"] == true;
+    }else{
+      _auction["isUserOwner"] == false;
+    }
+    if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
+      _auction["isUserWinner"] == true;
+    }else{
+      _auction["isUserWinner"] == false;
+    }
+  })
+}
+
+function displayWinningNotification(){
+  auctions.forEach((_auction) => {
+    if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
+      notification(`🎉 Congratulations you won auction ${_auction.name}.`)
+      setTimeout(function() {
+      }, 30000);
+    }
+  })
+}
+
 function sortListings(){
   auctions.forEach((_auction) => {
     if(_auction.hasAuctionEnded){
@@ -288,7 +315,6 @@ function auctionTemplate(_auction) {
 
 function renderAuctionModal(index) {
   notification("⌛ Loading...")
-  setUserID(auctions[index])
   document.getElementById("auctionDisplay").innerHTML = ""
   const newDiv = document.createElement("div")
   newDiv.className = "modal-content"
@@ -300,6 +326,19 @@ function renderAuctionModal(index) {
 }
 
 function editAuctionModal(_auction){
+  if(!_auction.hasAuctionStarted){
+    $("#auctiondets").addClass('is-hidden')
+  }
+  if(_auction.hasAuctionEnded){
+    $("#time").addClass('is-hidden')
+    $("#bid").addClass('is-hidden')
+    $(".payBidBtn").addClass('is-hidden')
+  }else{
+    $("#ended").addClass('is-hidden')
+  }
+  if(_auction.isUserWinner){
+    $("#settleBtn").removeClass('is-hidden')
+  }
   if(_auction.hasPaidBidFee){
     $(".payBidBtn").addClass('is-hidden')
   }else{
@@ -315,19 +354,7 @@ function editAuctionModal(_auction){
   }
 }
 
-function setUserID(_auction){
-  if(kit.defaultAccount == _auction.owner){
-    _auction["isUserOwner"] == true;
-  }else{
-    _auction["isUserOwner"] == false;
-  }
 
-  if(_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder){
-    _auction["isUserWinner"] == true;
-  }else{
-    _auction["isUserWinner"] == false;
-  }
-}
 
 
 function auctionModalTemplate(_auction) {
@@ -389,18 +416,23 @@ function auctionModalTemplate(_auction) {
           <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p>  
         </div>
         <hr>
-        <div id="bid">
-          &emsp;&emsp;<input id="bidAmount" type="text" size="9">&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
-        </div>
-        <div>
+        <div id="auctiondets">
+          <div id="bid">
+            &emsp;&emsp;<input id="bidAmount" type="text" size="9">&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
+          </div>
+          <div>
           <br>
-          <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-          &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidBtn">
+            <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
+            &emsp;&emsp;<button type="button" id="${_auction.index}" class="btn btn-dark payBidBtn">
             Pay Bid Fee
-          </button>
-          <button type="button" id="withdrawBtn" class="btn btn-dark">
-            Withdraw Bid Fee
-          </button>
+            </button>
+            <button type="button" id="withdrawBtn" class="btn btn-dark">
+              Withdraw Bid Fee
+            </button>
+            <button type="button" id="settleBtn" class="btn btn-dark is-hidden">
+            Settle Bid
+            </button>
+          </div>
         </div>
       </div>     
     </div>
