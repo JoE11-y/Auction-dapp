@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x16a769E11Dd0bF1bC689bB5929b8bdCFCA18d99e"
+const AuctionContractAddress = "0x0062A7b079e7F587F331f6EA0b5af2b38d6D8840"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -19,87 +19,6 @@ let auctions = []
 let activeListings = []
 let closedListings = []
 
-
-
-/*
-const auctions = [{
-    name: "Giant BBQ",
-    image: "https://i.imgur.com/yPreV19.png",
-    itemName: `Grilled chicken, beef, fish, sausages, bacon, 
-      vegetables served with chips.`,
-    location: "Kimironko Market",
-    owner: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
-    endTime: 23492875,
-    noOfBids: 27,
-    index: 0,
-    startPrice: 50,
-    highestBid: 70,
-    hasAuctionStarted: true,
-    remainingTimeTillStart: 0,
-    biddingFee: 5,
-    hasPaidBidFee: false,
-    hasAuctionEnded: false,
-    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-  },
-  {
-    name: "BBQ Chicken",
-    image: "https://i.imgur.com/NMEzoYb.png",
-    itemName: `French fries and grilled chicken served with gacumbari 
-      and avocados with cheese.`,
-    location: "Afrika Fresh KG 541 St",
-    owner: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea",
-    endTime: 40000000,
-    noOfBids: 12,
-    index: 1,
-    startPrice: 60,
-    highestBid: 133,
-    hasAuctionStarted: true,
-    remainingTimeTillStart: 0,
-    biddingFee: 6,
-    hasPaidBidFee: true,
-    hasAuctionEnded: false,
-    highestBidder: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-  },
-  {
-    name: "Beef burrito",
-    image: "https://i.imgur.com/RNlv3S6.png",
-    itemName: `Homemade tortilla with your choice of filling, cheese, 
-      guacamole salsa with Mexican refried beans and rice.`,
-    location: "Asili - KN 4 St",
-    owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-    endTime: 36743893,
-    noOfBids: 35,
-    index: 2,
-    startPrice: 70,
-    highestBid: 70,
-    hasAuctionStarted: false,
-    remainingTimeTillStart: 4000,
-    biddingFee: 7,
-    hasPaidBidFee: true,
-    hasAuctionEnded: true,
-    highestBidder: "0x32Be343B94f860124dC4fEe278FDCBD38C102D88",
-  },
-  {
-    name: "Barbecue Pizza",
-    image: "https://i.imgur.com/fpiDeFd.png",
-    itemName: `Barbecue Chicken Pizza: Chicken, gouda, pineapple, onions 
-      and house-made BBQ sauce.`,
-    location: "Kigali Hut KG 7 Ave",
-    owner: "0x2EF48F32eB0AEB90778A2170a0558A941b72BFFb",
-    endTime: 23492735,
-    noOfBids: 2,
-    index: 3,
-    startPrice: 80,
-    highestBid: 80,
-    hasAuctionStarted: false,
-    remainingTimeTillStart: 50000,
-    biddingFee: 8,
-    hasPaidBidFee: false,
-    hasAuctionEnded: false,
-    highestBidder: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea"
-  },
-]
-*/
 
 //Celo Blockchain Functions
 const connectCeloWallet = async function() {
@@ -723,6 +642,31 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
 
   // Settle Auction
   if (e.target.className.includes("settleBtn")) {
+    $('#auctionModal').modal('hide');
+    const index = currentAuctionID
+    notification("⌛ Waiting for payment approval...")
+    try {
+      await approve(auctions[index].highestBid)
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+    notification(`⌛ Awaiting payment for "${auctions[index].itemName}"...`)
+    try {
+      const result1 = await contract.methods
+        .settleAuction(index)
+        .send({
+          from: kit.defaultAccount
+        })
+      notification(`🎉 You successfully bought "${auctions[index].itemName}".`)
+      getAuctions()
+      getBalance()
+    } catch (error) {
+      notification(`⚠️ ${error}.`)
+    }
+  }
+
+  // ItemSent Declaration Button
+  if (e.target.className.includes("sendItemBtn")) {
     $('#auctionModal').modal('hide');
     const index = currentAuctionID
     notification("⌛ Waiting for payment approval...")

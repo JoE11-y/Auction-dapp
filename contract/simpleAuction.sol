@@ -133,6 +133,7 @@ contract Auctions{
         address payable,
         string memory,
         string memory,
+        uint,
         uint
     ) {
         uint endTime;
@@ -145,7 +146,8 @@ contract Auctions{
             auctions[_index].beneficiary,
             auctions[_index].itemName,
             auctions[_index].itemDescription,
-            endTime
+            endTime,
+            auctions[_index].auctionTax
         );
     }
     
@@ -204,6 +206,7 @@ contract Auctions{
 
         auctions[_index].highestBidder = msg.sender;
         auctions[_index].highestBid = bidAmount;
+        auctions[_index].auctionTax =  (auctions[_index].highestBid)/10;
 
         auctions[_index].noOfBids++;
         auctions[_index].hasPlacedBid[msg.sender] = true;
@@ -225,7 +228,6 @@ contract Auctions{
             );
         
         // AuctionOwner Now pays a tax so he does not claim to have sent the item without having sent the item
-        auctions[_index].auctionTax =  (auctions[_index].highestBid)/10;
         Tax = auctions[_index].auctionTax;
         IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), Tax);
         auctions[_index].itemSent = true;
