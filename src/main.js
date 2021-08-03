@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0xb6e91ec5015adbB83c898051A7Fa30B93F103db0"
+const AuctionContractAddress = "0xc3c50EC5Cd65Fe69922B474C4f2f881D99CF8271"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -95,6 +95,7 @@ const getAuctions = async function() {
       let x = await contract.methods.isAuctionSettled(i).call()
       let y = await contract.methods.hasMadePayment(i).call()
       let z = await contract.methods.hasSentItem(i).call()
+      let a = await contract.methods.hasPassedDeadline(i).call()
       resolve({
         index: i,
         owner: o[0],
@@ -118,6 +119,7 @@ const getAuctions = async function() {
         isAuctionSettled: x,
         hasMadePayment: y,
         hasSentItem: z,
+        deadlinePassed: a,
       })
     })
     _auctions.push(_auction)
@@ -194,6 +196,20 @@ function notification(_text) {
 function notificationOff() {
   $('._alert').removeClass("show");
   $('._alert').addClass("hide");
+}
+
+function dispFunction() {
+  // Get the checkbox
+  var checkBox = document.getElementById("check");
+  // Get the output text
+  var disp = document.getElementById("cancel");
+
+  // If the checkbox is checked
+  if (checkBox.checked == true){
+    disp.style.display = "block";
+  } else {
+    disp.style.display = "none";
+  }
 }
 
 function getRecent() {
@@ -325,34 +341,74 @@ function renderAuctionModal(index) {
 
 function editAuctionModal(_auction) {
   if (!_auction.hasAuctionStarted) {
-    $("#auctiondets").addClass('is-hidden')
+    $("#auctionBtns").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#sellersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
 
   if(_auction.isAuctionSettled){
-    $("#auctiondets").addClass('is-hidden')
+    $("#auctionBtns").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#sellersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
 
-  if (_auction.hasAuctionEnded && _auction.isUserWinner) {
-    $("#bid").addClass('is-hidden')
-    $(".payBidBtn").addClass('is-hidden')
-    return;
-  } else if(_auction.hasAuctionEnded && !_auction.isUserWinner){
-    $("#bid").addClass('is-hidden')
-    $(".payBidBtn").addClass('is-hidden')
-    $("#settleBtn").addClass('is-hidden')
+  if(_auction.hasAuctionEnded && _auction.deadlinePassed){
+    $document.getElementById("cancelBtn").disabled = false;
+    $document.getElementById("refundBtn").disabled = false;
+  }
+
+  if (_auction.hasAuctionEnded){
+    if(_auction.isUserWinner) {
+      if(hasMadePayment){
+        $('#settleBtn').addClass('is-hidden')
+      }else{
+        $('#confirmBtn').addClass('is-hidden')
+      }
+      $("#bid").addClass('is-hidden')
+      $(".payBidBtn").addClass('is-hidden')
+      $("#sellersBtn").addClass('is-hidden')
+      $("#postDeadlineBtns").addClass('is-hidden')
+      return;
+    } else if(!_auction.isUserOwner){
+        $("#bid").addClass('is-hidden')
+        $(".payBidBtn").addClass('is-hidden')
+        $("#buyersBtn").addClass('is-hidden')
+        $("#sellersBtn").addClass('is-hidden')
+        $("#postDeadlineBtns").addClass('is-hidden')
+        return;
+    } 
+  }
+
+  if(_auction.isUserOwner){
+    if(hasSentItem){
+      $document.getElementById("sendItemBtn").disabled = true;
+    }else{
+      $document.getElementById("withdraw").disabled = true;
+    }
+    $("#auctionBtns").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
 
-  if (_auction.hasPaidBidFee) {
+  if (_auction.hasPaidBidFee){
     $(".payBidBtn").addClass('is-hidden')
-    $("#settleBtn").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#sellersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
   } else {
-    $("#withdrawBtn").addClass('is-hidden')
     $("#bid").addClass('is-hidden')
-    $("#settleBtn").addClass('is-hidden')   
+    $("#withdrawBtn").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#sellersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
+
   }
+  
 }
 
 
@@ -370,21 +426,21 @@ function auctionModalTemplate(_auction) {
   <div class="modal-body" style="background-color: rgb(171, 161, 163);">
     <div class="flex_container">
       <div class="flex_row">
-        <div id="carouselExampleIndicators" class="carousel slide carousel-fade" data-mdb-ride="carousel">
+        <div id="carouselExampleIndicators" class="carousel slide" data-mdb-ride="carousel">
           <div class="carousel-indicators">
             <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="0" class="active" aria-current="true" aria-label="Slide 1"></button>
             <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="1" aria-label="Slide 2"></button>
             <button type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide-to="2" aria-label="Slide 3"></button>
           </div>
           <div class="carousel-inner">
-            <div class="carousel-item active">
-              <img src="${_auction.image1}" class="d-block w-100" alt="..." />
+            <div class="carousel-item _image-slide active">
+              <img style='height: 100%; width: 100%; object-fit: contain' src="${_auction.image1}" class="d-block w-100" alt="..." >
             </div>
-            <div class="carousel-item">
-              <img src="${_auction.image2}" class="d-block w-100" alt="..." />
+            <div class="carousel-item _image-slide">
+              <img style='height: 100%; width: 100%; object-fit: contain' src="${_auction.image2}" class="d-block w-100" alt="..." >
             </div>
-            <div class="carousel-item">
-              <img src="${_auction.image3}" class="d-block w-100" alt="..." />
+            <div class="carousel-item _image-slide">
+              <img style='height: 100%; width: 100%; object-fit: contain' src="${_auction.image3}" class="d-block w-100" alt="..." >
             </div>
           </div>
           <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
@@ -414,7 +470,7 @@ function auctionModalTemplate(_auction) {
           <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p>  
         </div>
         <hr>
-        <div id="auctiondets">
+        <div id="auctionBtns">
           <div id="bid">
             &emsp;&emsp;<input id="bidAmount" type="text" size="9" required>&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
           </div>
@@ -427,41 +483,52 @@ function auctionModalTemplate(_auction) {
               Withdraw Bid Fee
             </button>
           </div>
+        </div>
+        <div id="buyersBtn">
+          <blockquote>&emsp;&emsp;N/B: You can only withdraw after settling bid</blockquote>
           <div id="settleBtn">
-            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
-            &emsp;&emsp;<button type="button" i class="btn btn-dark settleBtn">
-              Settle Bid
-            </button>
-          </div>
-          <div id="sendItemBtn">
-            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
-            &emsp;&emsp;<button type="button" i class="btn btn-dark sendItemBtn">
-              Item has been sent
-            </button>
+          <p>&emsp;&emsp;Transfer funds to Beneficiary.</p>
+          &emsp;&emsp;<button type="button" i class="btn btn-dark settleBtn">
+            Transfer Funds</button>
           </div>
           <div id="confirmBtn">
-            <p>&emsp;&emsp;Confirm if Item has been received by you.</p>
+            <p>&emsp;&emsp;Please confirm if Item has been received by you.</p>
             &emsp;&emsp;<button type="button" i class="btn btn-dark confirmBtn">
               Confirm Item Receipt
             </button>
           </div>
-          <div id="withdrawTaxBtn">
-            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
-            &emsp;&emsp;<button type="button" i class="btn btn-dark withdrawTaxBtn">
-              Withdraw Tax
-            </button>
-          </div>
-          <div id="requestRefundBtn">
-            <p>&emsp;&emsp;Note: This is only functional if seller doesn't release item</p>
-            &emsp;&emsp;<button type="button" i class="btn btn-dark requestRefundBtn">
-              Request Refund
-            </button>
-          </div>
-          <div id="cancelBtn">
-            <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make payments</p>
-            &emsp;&emsp;<button type="button" i class="btn btn-dark cancelBtn">
-              Cancel Auction
-            </button>
+          <div id="cancelAuctionBuyer">
+            Cancel Auction: <input type="checkbox" class="check" id="check" onclick="dispFunction()">
+            <div id="cancel" style="display:none">
+              <hr>
+              <p>&emsp;&emsp;Note: This is only functional if seller doesn't release item</p>
+              &emsp;&emsp;<button type="button" id="refundBtn" class="btn btn-dark requestRefundBtn" disabled>
+                Request Refund
+              </button>
+          </div>  
+      </div>
+        </div>
+        <div id="sellersBtn">
+          &emsp;&emsp;Please confirm if you have released item. <br> 
+          &emsp;&emsp;<button  type="button" id="sendItemBtn" class="btn btn-dark sendItemBtn">
+            Item has been sent
+          </button>
+          <blockquote>&emsp;&emsp;N/B: A withdrawable tax (10% of highest bid) will be paid by you as<br>
+          &emsp;&emsp;security for buyer.</blockquote>
+          <br>
+          <p>&emsp;&emsp;N/B: You can only withdraw after bid is complete</p>
+          &emsp;&emsp;<button type="button" id="withdraw" class="btn btn-dark withdrawTaxBtn">
+            Withdraw Tax
+          </button>
+          <div id="cancelAuctionSeller">
+              Cancel Auction: <input type="checkbox" class="check" id="check" onclick="dispFunction()">
+              <div id="cancel" style="display:none">
+                <hr>
+                <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make payments</p>
+                &emsp;&emsp;<button type="button" id="cancelBtn" class="btn btn-dark cancelBtn" disabled>
+                  Cancel Auction
+                </button>
+              </div>  
           </div>
         </div>
       </div>     
@@ -577,6 +644,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
   if (e.target.className.includes("closeModal")) {
     $('#auctionModal').modal('hide');
     }
+  
+  if (e.target.className.includes("check")) {
+    dispFunction()
+  }
 
   // Paying Bid Fee
   if (e.target.className.includes("payBidBtn")) {

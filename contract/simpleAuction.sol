@@ -71,6 +71,7 @@ contract Auctions{
         mapping (uint => Image) images;
         mapping (address => bool) hasPaidBidFee;
         mapping (address => bool) hasPlacedBid;
+        mapping (address => bool) hasPaidTax;
     }
 
     mapping(uint => Auction) internal auctions;
@@ -89,6 +90,11 @@ contract Auctions{
     
     modifier hasPaidBidFee(uint _index){
         require(auctions[_index].hasPaidBidFee[msg.sender] == true, "You have not paid bidding fee");
+        _;
+    }
+
+    modifier hasPaidTax(uint _index){
+        require(auctions[_index].hasPaidTax[msg.sender] == true, "You have not paid Tax");
         _;
     }
 
@@ -232,6 +238,7 @@ contract Auctions{
         IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), Tax);
         auctions[_index].itemSent = true;
         auctions[_index].auctionState = State.ITEM_SENT;
+        auctions[_index].hasPaidTax[msg.sender] = true;
     }
 
     function confirmReceipt(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index) public {
@@ -244,13 +251,15 @@ contract Auctions{
         auctions[_index].auctionSettled = true;
     }
     
-    function withdrawTax(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) public{
+    function withdrawTax(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) hasPaidTax(_index) public{
         require(
             auctions[_index].auctionState == State.DELIVERY_COMPLETE || auctions[_index].auctionSettled, "Item has not been receieved by Highest Bidder"    
         );
         
         Tax = auctions[_index].auctionTax;
         IERC20Token(cUsdTokenAddress).transfer(auctions[_index].beneficiary, Tax);
+        auctions[_index].hasPaidTax[msg.sender] = false;
+
     }
     
     function cancelAuctionHighestBidder(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyHighestbidder(_index) public {
@@ -337,6 +346,14 @@ contract Auctions{
         return(
             auctions[_index].itemSent    
         );
+    }
+
+    function hasPassedDeadline(uint _index) public view returns(bool){  
+        if(block.timestamp > auctions[_index].auctionDeadline && !auctions[_index].auctionSettled){
+            return(true);
+        }else{
+            return(false);
+        }
     }
     
 }

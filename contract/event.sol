@@ -121,3 +121,28 @@ const auctions = [{
     highestBidder: "0x3275B7F400cCdeBeDaf0D8A9a7C8C1aBE2d747Ea"
   },
 ]
+
+  if (e.target.className.includes("check")) {
+    dispFunction()
+  }
+
+<div id="cancelAuction">
+  Cancel Auction: <input type="checkbox" class="check" id="check" onclick="dispFunction()">
+  <div id="cancel" style="display:none">
+    <hr>
+  </div>
+</div>
+
+function dispFunction() {
+  // Get the checkbox
+  var checkBox = document.getElementById("check");
+  // Get the output text
+  var disp = document.getElementById("cancel");
+
+  // If the checkbox is checked
+  if (checkBox.checked == true){
+    text.style.display = "block";
+  } else {
+    text.style.display = "none";
+  }
+}
