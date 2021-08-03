@@ -9,7 +9,8 @@ import erc20Abi from "../contract/erc20.abi.json"
 const ERC20_DECIMALS = 18
 //0xCb0f3bA05E367f8302553B31f7557fbcc86fe469
 //0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36
-const AuctionContractAddress = "0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36"
+// you must setlle the auction within 48hrs else the bid money is sent to the 
+const AuctionContractAddress = "0x2Ed18c736383d051ebd012040585716c2dEFC793"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -154,6 +155,12 @@ const setUser = async function() {
   document.getElementById("userAddr").appendChild(newDiv)
 }
 
+const auctionNotifications = async function() {
+  displayWinningNotification()
+  displayUserOutBid()
+  auctionEndedAnnouncement()
+}
+
 const getAuctions = async function() {
   notification("⌛ Loading...")
   const _auctionsLength = await contract.methods.getAuctionsLength().call()
@@ -168,6 +175,7 @@ const getAuctions = async function() {
       let u = await contract.methods.hasAuctionEnded(i).call()
       let v = await contract.methods.hasPlacedBid(i).call()
       let w = await contract.methods.noOfBids(i).call()
+      let x = await contract.methods.isAuctionSettled(i).call()
       resolve({
         index: i,
         owner: p[0],
@@ -185,6 +193,7 @@ const getAuctions = async function() {
         hasAuctionEnded: u,
         hasPlacedBid: v,
         noOfBids: w,
+        isAuctionSettled: x,
       })
     })
     _auctions.push(_auction)
@@ -194,11 +203,7 @@ const getAuctions = async function() {
   sortListings()
   setUserID()
   getRecent()
-  notification("⌛ Loading...")
   renderAuctions(recentAuctions)
-  notification("⌛ Loading...")
-  displayUserOutBid()
-  displayWinningNotification()
   notificationOff()
 }
 
@@ -208,23 +213,23 @@ const getAuctions = async function() {
 function setUserID() {
   auctions.forEach((_auction) => {
     if (kit.defaultAccount == _auction.owner) {
-      _auction["isUserOwner"] == true;
+      _auction["isUserOwner"] = true;
     } else {
-      _auction["isUserOwner"] == false;
+      _auction["isUserOwner"] = false;
     }
     if (_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder) {
-      _auction["isUserWinner"] == true;
+      _auction["isUserWinner"] = true;
     } else {
-      _auction["isUserWinner"] == false;
+      _auction["isUserWinner"] = false;
     }
   })
 }
 
 function displayWinningNotification() {
+  notificationOff()
   closedListings.forEach((_auction) => {
     if (_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder) {
-      notification(`🎉 Congratulations you won auction ${_auction.name}.`)
-      setTimeout(function() {}, 30000);
+      notification(`🎉 Congratulations you won the auction of ${_auction.itemName}.`)
     }
   })
 }
@@ -233,7 +238,14 @@ function displayUserOutBid() {
   activeListings.forEach((_auction) => {
     if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
       notification(`🎉 Your Bid for ${_auction.name} has been outbid.`)
-      setTimeout(function() {}, 30000);
+    }
+  })
+}
+
+function auctionEndedAnnouncement() {
+  auctions.forEach((_auction) => {
+    if (_auction.hasPlacedBid && _auction.hasAuctionEnde && !_auction.isUserWinner) {
+      notification(`${_auction.itemName} listing has ended.`)
     }
   })
 }
@@ -296,17 +308,17 @@ function checkTime(_auction) {
     seconds -= hrs * 3600;
     var mins = Math.floor(seconds / 60);
     seconds -= mins * 60;
-    if(hrs == 0){
+    if(hrs == 0 && mins != 0){
       return `
     <span> Auction Ends in ${mins}m </span>
     `
-    }else if(mins == 0){
+    }else if(hrs == 0 && mins == 0){
       return `
       <span> Auction Ends in ${seconds}s </span>
     `
     }else {
       return `
-    <span> Auction Ends in ${hrs}h ${mins}m</span>
+    <span> Auction Ends in ${days}d ${hrs}h ${mins}m</span>
     `
     }
   } else {
@@ -316,7 +328,7 @@ function checkTime(_auction) {
     var hrs = Math.floor(seconds / 3600);
     seconds -= hrs * 3600;
     var mins = Math.floor(seconds / 60);
-    seconds -= min * 60;
+    seconds -= mins * 60;
     if(hrs == 0){
       return `
     <span> Auction Starts in ${mins}m </span>
@@ -386,24 +398,36 @@ function renderAuctionModal(index) {
   notificationOff()
 }
 
+
 function editAuctionModal(_auction) {
   if (!_auction.hasAuctionStarted) {
     $("#auctiondets").addClass('is-hidden')
+    return;
   }
-  if (_auction.hasAuctionEnded) {
+
+  if(_auction.isAuctionSettled){
+    $("#auctiondets").addClass('is-hidden')
+    return;
+  }
+
+  if (_auction.hasAuctionEnded && _auction.isUserWinner) {
     $("#bid").addClass('is-hidden')
     $(".payBidBtn").addClass('is-hidden')
-  } 
+    return;
+  } else if(_auction.hasAuctionEnded && !_auction.isUserWinner){
+    $("#bid").addClass('is-hidden')
+    $(".payBidBtn").addClass('is-hidden')
+    $("#settleBtn").addClass('is-hidden')
+    return;
+  }
 
   if (_auction.hasPaidBidFee) {
     $(".payBidBtn").addClass('is-hidden')
+    $("#settleBtn").addClass('is-hidden')
   } else {
     $("#withdrawBtn").addClass('is-hidden')
     $("#bid").addClass('is-hidden')
-  }
-  if (_auction.isUserWinner) {
-    $("#settleBtn").removeClass('is-hidden')
-    $("#bid").addClass('is-hidden')
+    $("#settleBtn").addClass('is-hidden')   
   }
 }
 
@@ -478,9 +502,14 @@ function auctionModalTemplate(_auction) {
           <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee">
             Withdraw Bid Fee
           </button>
-          <button type="button" id="settleBtn" class="btn btn-dark is-hidden">
+          <br>
+          <br>
+          <div>
+          <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
+          &emsp;&emsp;<button type="button" id="settleBtn" class="btn btn-dark settleBtn">
             Settle Bid
           </button>
+          </div>
         </div>
       </div>     
     </div>
@@ -657,7 +686,8 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
 
   // Settle Auction
   if (e.target.className.includes("settleBtn")) {
-    const index = e.target.id
+    $('#auctionModal').modal('hide');
+    const index = currentAuctionID
     notification("⌛ Waiting for payment approval...")
     try {
       await approve(auctions[index].highestBid)
@@ -688,5 +718,5 @@ window.addEventListener('load', async () => {
   await getBalance()
   await setUser()
   await getAuctions()
-  notificationOff()
+  await auctionNotifications()
 });

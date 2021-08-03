@@ -22,8 +22,27 @@ contract Auctions{
     uint256 internal amount;
     address internal cUsdTokenAddress = 0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1;
     uint index = 0;
-    //uint auctionStartTime = 86400; //seconds
-    uint auctionStartTime = 120; //test
+    
+    //uint auctionStartTime = 86400; //actual setting  "A day"
+    
+    uint auctionStartTime = 180; //for testing
+    
+    //uint completionDeadline = 604800; //actual setting "7 days"
+    
+    uint completionDeadline = 360; // for testing
+    
+    uint Tax;
+
+    enum State { // Handles the final transaction between the highestBidder and beneficiary after the auction has ended
+        NOT_INITIATED,
+        AWAITING_DELIVERY,
+        ITEM_SENT,
+        DELIVERY_COMPLETE,
+        COMPLETE,
+        AUCTION_CANCELED
+    }
+    
+    
     struct Auction {
         address payable beneficiary;
         string itemImage;
@@ -31,13 +50,19 @@ contract Auctions{
         string itemDescription;
         uint auctionStartTime;
         uint auctionEndTime;
+        uint auctionDeadline;
         uint startPrice;
         uint biddingFee;
+        uint auctionTax;
         address highestBidder;
         uint highestBid;
         uint noOfBids;
         bool auctionEnded;
         bool auctionSettled;
+        bool highestBidTransferred;
+        bool itemSent;
+        bool auctionNotSettled;
+        State auctionState; //to handle payment between the highestBidder and the Beneficiary
 
         
         mapping (address => bool) hasPaidBidFee;
@@ -54,12 +79,17 @@ contract Auctions{
     }
     
     modifier onlyHighestbidder(uint _index) {
-        require(msg.sender == auctions[_index].highestBidder, "You're not the Winner of the Auction");
+        require(msg.sender == auctions[_index].highestBidder, "Sorry you are not the highest bidder");
         _;
     }
     
     modifier hasPaidBidFee(uint _index){
         require(auctions[_index].hasPaidBidFee[msg.sender] == true, "You have not paid bidding fee");
+        _;
+    }
+
+    modifier onlyAuctionOwner(uint _index){
+        require(msg.sender == auctions[_index].beneficiary, "You are not the beneficiary of this auction");
         _;
     }
 
@@ -85,12 +115,13 @@ contract Auctions{
             _auction.itemImage = _itemImage;
             _auction.auctionStartTime = block.timestamp + auctionStartTime;
             _auction.auctionEndTime = _auction.auctionStartTime + _endTime;
+            _auction.auctionDeadline = _auction.auctionEndTime + completionDeadline;
             _auction.startPrice = _startPrice;
             _auction.biddingFee = (_startPrice)/10;
             _auction.highestBid = _auction.startPrice;
+            _auction.auctionTax = 0;
             _auction.noOfBids = 0;
-            _auction.auctionSettled = false;
-
+            _auction.auctionState = State.NOT_INITIATED;
             index++;
     }
 
@@ -139,9 +170,11 @@ contract Auctions{
             require(auctions[_index].auctionSettled == true, "You cannot withdraw Bid Fee until you have settled the auction.");
             amount = auctions[_index].biddingFee;
             IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
+            auctions[_index].hasPaidBidFee[msg.sender] = false;
         }else{
             amount = auctions[_index].biddingFee;
             IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
+            auctions[_index].hasPaidBidFee[msg.sender] = false;
         }
         
     }
@@ -164,12 +197,68 @@ contract Auctions{
 
     function settleAuction(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index) public payable {
         require(
-            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, auctions[_index].beneficiary, auctions[_index].highestBid),
+            IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), auctions[_index].highestBid),
                 "Transfer failed"
         );
 
+        auctions[_index].highestBidTransferred= true;
+        auctions[_index].auctionState = State.AWAITING_DELIVERY;
+    }
+    
+    function sendItem(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) public{
+        require (
+            auctions[_index].auctionState == State.AWAITING_DELIVERY, "Payment has not been made by the HighestBidder"
+            );
+        
+        // AuctionOwner Now pays a tax so he does not claim to have sent the item without having sent the item
+        auctions[_index].auctionTax =  (auctions[_index].highestBid)/10;
+        Tax = auctions[_index].auctionTax;
+        IERC20Token(cUsdTokenAddress).transferFrom(msg.sender, address(this), Tax);
+        auctions[_index].itemSent = true;
+        auctions[_index].auctionState = State.ITEM_SENT;
+    }
+
+    function confirmReceipt(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyHighestbidder(_index) public {
+        require(
+            auctions[_index].auctionState == State.ITEM_SENT, "Please wait, Item has not been sent by Auction Beneficiary"
+        );
+     
+        IERC20Token(cUsdTokenAddress).transfer(auctions[_index].beneficiary, auctions[_index].highestBid);
+        auctions[_index].auctionState = State.DELIVERY_COMPLETE;
         auctions[_index].auctionSettled = true;
     }
+    
+    function withdrawTax(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) public{
+        require(
+            auctions[_index].auctionState == State.DELIVERY_COMPLETE, "Item has not been receieved by Highest Bidder"    
+        );
+        
+        Tax = auctions[_index].auctionTax;
+        IERC20Token(cUsdTokenAddress).transfer(auctions[_index].beneficiary, Tax);
+    }
+    
+    function cancelAuctionHighestBidder(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyHighestbidder(_index) public {
+        require(
+            auctions[_index].auctionState == State.AWAITING_DELIVERY, "Item has been sent"
+        );
+        
+        IERC20Token(cUsdTokenAddress).transfer(payable(msg.sender), auctions[_index].highestBid);
+        auctions[_index].auctionState = State.AUCTION_CANCELED;
+        auctions[_index].auctionNotSettled = true;
+    }
+    
+    function cancelAuction(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyAuctionOwner(_index) public{
+        require(
+            auctions[_index].noOfBids != 0 && auctions[_index].auctionState == State.NOT_INITIATED, "Sorry but you do not meet the requirements to use this feature"
+        );
+        
+        amount = auctions[_index].biddingFee;
+        IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
+        auctions[_index].hasPaidBidFee[auctions[_index].highestBidder] = false;
+        auctions[_index].auctionState = State.AUCTION_CANCELED;
+        auctions[_index].auctionNotSettled = true;
+    }
+    
     
     function getAuctionsLength() public view returns(uint){
         return (index);
@@ -215,7 +304,11 @@ contract Auctions{
     function noOfBids(uint _index) public view returns(uint){
         return(auctions[_index].noOfBids);
     }
-
-
-
+    
+    function isAuctionSettled(uint _index) public view returns(bool){
+        return(
+            auctions[_index].auctionSettled
+        );
+    }
+    
 }
