@@ -176,6 +176,8 @@ const getAuctions = async function() {
       let v = await contract.methods.hasPlacedBid(i).call()
       let w = await contract.methods.noOfBids(i).call()
       let x = await contract.methods.isAuctionSettled(i).call()
+      let y = await contract.methods.hasMadePayment(i).call()
+      let z = await contract.methods.hasSentItem(i).call()
       resolve({
         index: i,
         owner: p[0],

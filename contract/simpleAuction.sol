@@ -317,7 +317,7 @@ contract Auctions{
         );
     }
     
-    function hasItemSent(uint _index) public view returns(bool){
+    function hasSentItem(uint _index) public view returns(bool){
         return(
             auctions[_index].itemSent    
         );
