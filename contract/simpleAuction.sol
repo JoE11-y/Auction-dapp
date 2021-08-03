@@ -311,4 +311,16 @@ contract Auctions{
         );
     }
     
+    function hasMadePayment(uint _index) public view returns(bool){
+        return(
+            auctions[_index].highestBidTransferred    
+        );
+    }
+    
+    function hasItemSent(uint _index) public view returns(bool){
+        return(
+            auctions[_index].itemSent    
+        );
+    }
+    
 }
