@@ -7,10 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-//0xCb0f3bA05E367f8302553B31f7557fbcc86fe469
-//0x387769F35Ddd08b8834F6690a34FaEfc2BDA2e36
-// you must setlle the auction within 48hrs else the bid money is sent to the 
-const AuctionContractAddress = "0x2Ed18c736383d051ebd012040585716c2dEFC793"
+const AuctionContractAddress = "0x16a769E11Dd0bF1bC689bB5929b8bdCFCA18d99e"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -167,7 +164,8 @@ const getAuctions = async function() {
   const _auctions = []
   for (let i = 0; i < _auctionsLength; i++) {
     let _auction = new Promise(async (resolve, reject) => {
-      let p = await contract.methods.getAuction(i).call()
+      let o = await contract.methods.getAuction(i).call()
+      let p = await contract.methods.getImageLinks(i).call()
       let q = await contract.methods.getPricing(i).call()
       let r = await contract.methods.hasAuctionStarted(i).call()
       let s = await contract.methods._hasPaidBidFee(i).call()
@@ -180,11 +178,13 @@ const getAuctions = async function() {
       let z = await contract.methods.hasSentItem(i).call()
       resolve({
         index: i,
-        owner: p[0],
-        itemName: p[1],
-        itemDescription: p[2],
-        image: p[3],
-        endTime: p[4],
+        owner: o[0],
+        itemName: o[1],
+        itemDescription: o[2],
+        endTime: o[3],
+        image1: p[0],
+        image2: p[1],
+        image3: p[2],
         startPrice: new BigNumber(q[0]),
         biddingFee: new BigNumber(q[1]),
         hasAuctionStarted: r[0],
@@ -196,6 +196,8 @@ const getAuctions = async function() {
         hasPlacedBid: v,
         noOfBids: w,
         isAuctionSettled: x,
+        hasMadePayment: y,
+        hasSentItem: z,
       })
     })
     _auctions.push(_auction)
@@ -357,7 +359,7 @@ function convertDays(_days) {
 function auctionTemplate(_auction) {
   return `
   <div class="card mb-4">
-  <img class="card-img-top" src="${_auction.image}" alt="...">
+  <img class="card-img-top" src="${_auction.image1}" alt="...">
   <div class="position-absolute top-0 end-0 bg-warning mt-4 px-2 py-1 rounded-start">
   <i class="fas fa-gavel"></i>&nbsp;${_auction.noOfBids} Bids
   </div>
@@ -456,13 +458,13 @@ function auctionModalTemplate(_auction) {
           </div>
           <div class="carousel-inner">
             <div class="carousel-item active">
-              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+              <img src="${_auction.image1}" class="d-block w-100" alt="..." />
             </div>
             <div class="carousel-item">
-              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+              <img src="${_auction.image2}" class="d-block w-100" alt="..." />
             </div>
             <div class="carousel-item">
-              <img src="${_auction.image}" class="d-block w-100" alt="..." />
+              <img src="${_auction.image3}" class="d-block w-100" alt="..." />
             </div>
           </div>
           <button class="carousel-control-prev" type="button" data-mdb-target="#carouselExampleIndicators" data-mdb-slide="prev">
@@ -496,21 +498,50 @@ function auctionModalTemplate(_auction) {
           <div id="bid">
             &emsp;&emsp;<input id="bidAmount" type="text" size="9" required>&nbsp;cUSD&nbsp;&emsp;&emsp;<button type="button" class="btn btn-dark placeBid">Place bid</button><br>
           </div>
-          <br>
-          <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
-          &emsp;&emsp;<button type="button" id="payBidBtn" class="btn btn-dark payBidBtn">
-          Pay Bid Fee
-          </button>
-          <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee">
-            Withdraw Bid Fee
-          </button>
-          <br>
-          <br>
           <div>
-          <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
-          &emsp;&emsp;<button type="button" id="settleBtn" class="btn btn-dark settleBtn">
-            Settle Bid
-          </button>
+            <p>&emsp;&emsp;Bid Fee: 10% of starting bid price</p>
+            &emsp;&emsp;<button type="button" id="payBidBtn" class="btn btn-dark payBidBtn">
+            Pay Bid Fee
+            </button>
+            <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee">
+              Withdraw Bid Fee
+            </button>
+          </div>
+          <div id="settleBtn">
+            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark settleBtn">
+              Settle Bid
+            </button>
+          </div>
+          <div id="sendItemBtn">
+            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark sendItemBtn">
+              Item has been sent
+            </button>
+          </div>
+          <div id="confirmBtn">
+            <p>&emsp;&emsp;Confirm if Item has been received by you.</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark confirmBtn">
+              Confirm Item Receipt
+            </button>
+          </div>
+          <div id="withdrawTaxBtn">
+            <p>&emsp;&emsp;Note: You can only withdraw after settling bid</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark withdrawTaxBtn">
+              Withdraw Tax
+            </button>
+          </div>
+          <div id="requestRefundBtn">
+            <p>&emsp;&emsp;Note: This is only functional if seller doesn't release item</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark requestRefundBtn">
+              Request Refund
+            </button>
+          </div>
+          <div id="cancelBtn">
+            <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make payments</p>
+            &emsp;&emsp;<button type="button" i class="btn btn-dark cancelBtn">
+              Cancel Auction
+            </button>
           </div>
         </div>
       </div>     
@@ -579,7 +610,11 @@ document
     const params = [
       document.getElementById("itemName").value,
       document.getElementById("item-desc").value,
-      document.getElementById("newImgUrl").value,
+      [
+        document.getElementById("imgUrl1").value,
+        document.getElementById("imgUrl2").value,
+        document.getElementById("imgUrl3").value,
+      ],
       convertDays(document.getElementById("listing-duration").value),
       new BigNumber(document.getElementById("startPrice").value)
       .shiftedBy(ERC20_DECIMALS)

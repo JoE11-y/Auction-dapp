@@ -75,9 +75,26 @@
 				"type": "string"
 			},
 			{
-				"internalType": "string",
-				"name": "_itemImage",
-				"type": "string"
+				"components": [
+					{
+						"internalType": "string",
+						"name": "firstImage",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "secondImage",
+						"type": "string"
+					},
+					{
+						"internalType": "string",
+						"name": "thirdImage",
+						"type": "string"
+					}
+				],
+				"internalType": "struct Auctions.Image",
+				"name": "_itemImages",
+				"type": "tuple"
 			},
 			{
 				"internalType": "uint256",
@@ -109,11 +126,6 @@
 				"internalType": "address payable",
 				"name": "",
 				"type": "address"
-			},
-			{
-				"internalType": "string",
-				"name": "",
-				"type": "string"
 			},
 			{
 				"internalType": "string",
@@ -166,6 +178,35 @@
 				"internalType": "uint256",
 				"name": "",
 				"type": "uint256"
+			}
+		],
+		"stateMutability": "view",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "_index",
+				"type": "uint256"
+			}
+		],
+		"name": "getImageLinks",
+		"outputs": [
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
+			},
+			{
+				"internalType": "string",
+				"name": "",
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",

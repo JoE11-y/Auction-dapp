@@ -42,10 +42,14 @@ contract Auctions{
         AUCTION_CANCELED
     }
     
+    struct Image {
+        string firstImage;
+        string secondImage;
+        string thirdImage;
+    }
     
     struct Auction {
         address payable beneficiary;
-        string itemImage;
         string itemName;
         string itemDescription;
         uint auctionStartTime;
@@ -64,7 +68,7 @@ contract Auctions{
         bool auctionNotSettled;
         State auctionState; //to handle payment between the highestBidder and the Beneficiary
 
-        
+        mapping (uint => Image) images;
         mapping (address => bool) hasPaidBidFee;
         mapping (address => bool) hasPlacedBid;
     }
@@ -104,15 +108,15 @@ contract Auctions{
     function createAuction(
         string memory _itemName,
         string memory _itemDescription,
-        string memory _itemImage,
+        Image memory _itemImages,
         uint _endTime,
         uint _startPrice
         )public {
             Auction storage _auction = auctions[index];
             _auction.beneficiary = payable(msg.sender);
             _auction.itemName = _itemName;
+            _auction.images[index] = _itemImages;
             _auction.itemDescription = _itemDescription;
-            _auction.itemImage = _itemImage;
             _auction.auctionStartTime = block.timestamp + auctionStartTime;
             _auction.auctionEndTime = _auction.auctionStartTime + _endTime;
             _auction.auctionDeadline = _auction.auctionEndTime + completionDeadline;
@@ -129,7 +133,6 @@ contract Auctions{
         address payable,
         string memory,
         string memory,
-        string memory,
         uint
     ) {
         uint endTime;
@@ -142,9 +145,20 @@ contract Auctions{
             auctions[_index].beneficiary,
             auctions[_index].itemName,
             auctions[_index].itemDescription,
-            auctions[_index].itemImage,
             endTime
         );
+    }
+    
+    function getImageLinks(uint _index) public view returns(
+        string memory, 
+        string memory, 
+        string memory
+        ){
+            return(
+            auctions[_index].images[_index].firstImage,
+            auctions[_index].images[_index].secondImage,
+            auctions[_index].images[_index].thirdImage
+       );
     }
     
     function getPricing(uint _index) public view returns(
@@ -244,7 +258,7 @@ contract Auctions{
         
         IERC20Token(cUsdTokenAddress).transfer(payable(msg.sender), auctions[_index].highestBid);
         auctions[_index].auctionState = State.AUCTION_CANCELED;
-        auctions[_index].auctionNotSettled = true;
+        auctions[_index].auctionSettled = true;
     }
     
     function cancelAuction(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyAuctionOwner(_index) public{
@@ -256,7 +270,7 @@ contract Auctions{
         IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
         auctions[_index].hasPaidBidFee[auctions[_index].highestBidder] = false;
         auctions[_index].auctionState = State.AUCTION_CANCELED;
-        auctions[_index].auctionNotSettled = true;
+        auctions[_index].auctionSettled = true;
     }
     
     
