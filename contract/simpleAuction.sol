@@ -183,7 +183,7 @@ contract Auctions{
 
     function withdrawBidFee(uint _index) public onlyAfter(auctions[_index].auctionEndTime) hasPaidBidFee(_index){ 
         if (msg.sender == auctions[_index].highestBidder){
-            require(auctions[_index].auctionSettled == true, "You cannot withdraw Bid Fee until you have settled the auction.");
+            require(auctions[_index].auctionSettled || auctions[_index].auctionState == State.DELIVERY_COMPLETE, "You cannot withdraw Bid Fee until you have settled the auction.");
             amount = auctions[_index].biddingFee;
             IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
             auctions[_index].hasPaidBidFee[msg.sender] = false;
@@ -246,7 +246,7 @@ contract Auctions{
     
     function withdrawTax(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) public{
         require(
-            auctions[_index].auctionState == State.DELIVERY_COMPLETE, "Item has not been receieved by Highest Bidder"    
+            auctions[_index].auctionState == State.DELIVERY_COMPLETE || auctions[_index].auctionSettled, "Item has not been receieved by Highest Bidder"    
         );
         
         Tax = auctions[_index].auctionTax;
@@ -255,7 +255,7 @@ contract Auctions{
     
     function cancelAuctionHighestBidder(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyHighestbidder(_index) public {
         require(
-            auctions[_index].auctionState == State.AWAITING_DELIVERY, "Item has been sent"
+            auctions[_index].auctionState == State.AWAITING_DELIVERY, "Sorry you can't request for refund, Item has been sent"
         );
         
         IERC20Token(cUsdTokenAddress).transfer(payable(msg.sender), auctions[_index].highestBid);

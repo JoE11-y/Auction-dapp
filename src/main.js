@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x0062A7b079e7F587F331f6EA0b5af2b38d6D8840"
+const AuctionContractAddress = "0xb6e91ec5015adbB83c898051A7Fa30B93F103db0"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -101,6 +101,7 @@ const getAuctions = async function() {
         itemName: o[1],
         itemDescription: o[2],
         endTime: o[3],
+        auctionTax: o[4],
         image1: p[0],
         image2: p[1],
         image3: p[2],
@@ -671,24 +672,100 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
     const index = currentAuctionID
     notification("⌛ Waiting for payment approval...")
     try {
-      await approve(auctions[index].highestBid)
+      await approve(auctions[index].auctionTax)
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
-    notification(`⌛ Awaiting payment for "${auctions[index].itemName}"...`)
+    notification(`⌛ Awaiting Refundable Tax Payment for "${auctions[index].itemName}"...`)
     try {
       const result1 = await contract.methods
-        .settleAuction(index)
+        .sendItem(index)
         .send({
           from: kit.defaultAccount
         })
-      notification(`🎉 You successfully bought "${auctions[index].itemName}".`)
+      notification(`🎉 Payment sucessful.`)
       getAuctions()
       getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
   }
+
+    // Confirm Item receipt Button
+    if (e.target.className.includes("confirmBtn")) {
+      $('#auctionModal').modal('hide');
+      const index = currentAuctionID
+      notification(`⌛ Sending Item Receipt confirmation "${auctions[index].itemName}"...`)
+      try {
+        const result1 = await contract.methods
+          .confirmReceipt(index)
+          .send({
+            from: kit.defaultAccount
+          })
+        notification(`🎉 Confirmation complete.`)
+        getAuctions()
+        getBalance()
+      } catch (error) {
+        notification(`⚠️ ${error}.`)
+      }
+    }
+
+    // Confirm Item receipt Button
+    if (e.target.className.includes("withdrawTaxBtn")) {
+      $('#auctionModal').modal('hide');
+      const index = currentAuctionID
+      notification(`⌛ Withdrawing Funds"...`)
+      try {
+        const result1 = await contract.methods
+          .withdrawTax(index)
+          .send({
+            from: kit.defaultAccount
+          })
+        notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
+        getAuctions()
+        getBalance()
+      } catch (error) {
+        notification(`⚠️ ${error}.`)
+      }
+    }
+
+    // HighestBid Refund Button
+    if (e.target.className.includes("requestRefundBtn")) {
+      $('#auctionModal').modal('hide');
+      const index = currentAuctionID
+      notification(`⌛ Checking for refundability"...`)
+      try {
+        const result1 = await contract.methods
+          .cancelAuctionHighestBidder(index)
+          .send({
+            from: kit.defaultAccount
+          })
+        notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
+        getAuctions()
+        getBalance()
+      } catch (error) {
+        notification(`⚠️ ${error}.`)
+      }
+    }
+
+    // Cancel Auction Button for Auction Beneficiary 
+    if (e.target.className.includes("cancelBtn")) {
+      $('#auctionModal').modal('hide');
+      const index = currentAuctionID
+      notification(`⌛ Canceling Auction"...`)
+      try {
+        const result1 = await contract.methods
+          .cancelAuction(index)
+          .send({
+            from: kit.defaultAccount
+          })
+        notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
+        getAuctions()
+        getBalance()
+      } catch (error) {
+        notification(`⚠️ ${error}.`)
+      }
+    }
 
 })
 
