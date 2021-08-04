@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0xc3c50EC5Cd65Fe69922B474C4f2f881D99CF8271"
+const AuctionContractAddress = "0xaC2D54d6b995a5500d1Af397cD9141F24ED3fc8A"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
