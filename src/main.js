@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0x5aA74ceEFa0EaddB42100c064C86063f60ccBcbe"
+const AuctionContractAddress = "0xBdC9EC27463668dE843B1f1D1D49F1Dd21309102"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -164,25 +164,34 @@ function displayNotifications() {
         notification(`Your ${_auction.itemName} listing has ended.`)
       }
 
-      if (_auction.hasSentItem && _auction.isUserWinner) {
-        setTimeout(notification(`Seller has sent item ${_auction.itemName}.`), 10000)
+      if (_auction.isUserWinner) {
+        if(_auction.hasSentItem ){
+          setTimeout(notification(`Seller has sent item ${_auction.itemName}.`), 10000)
+        }
+        if(_auction.hasMadePayment){
+          setTimeout(notification(`Waiting for Seller to send ${_auction.itemName} item. ${_auction.itemName}.`), 10000)
+        }
+        if(_auction.delivered){
+          setTimeout(notification(`Your Order for ${_auction.itemName} is now complete.`), 10000)
+        }
       }
-      if (_auction.hasMadePayment && _auction.isUserOwner) {
-        setTimeout(notification(`Buyer has completed payment for item ${_auction.itemName}.`), 10000)
+
+      if (_auction.isUserOwner) {
+        if(_auction.hasMadePayment){
+          setTimeout(notification(`Buyer has completed payment for item ${_auction.itemName}.`), 10000)
+        }
+        if (_auction.hasSentItem){
+          setTimeout(notification(`Waiting for receipt confirmation from buyer for the ${_auction.itemName} item`), 10000)
+        }
+        if (_auction.delivered){
+          setTimeout(notification(`Buyer has received successfully received item, check your balance to see if you have received your money.`), 10000)
+        }
       }
-      if (_auction.delivered && _auction.isUserOwner){
-        setTimeout(notification(`Buyer has received successfully received item, check your balance to see if you have received your money.`), 10000)
-      }
-      if (_auction.delivered&& _auction.isUserWinner) {
-        setTimeout(notification(`Your Order for ${_auction.itemName} is now complete.`), 10000)
-      }
-    }
-   else {
+    }else {
      if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
       notification(`Your Bid for ${_auction.name} has been outbid.`)
       }
     }
-
   })
 }
 
@@ -208,20 +217,6 @@ function notificationOff() {
   $('._alert').addClass("hide");
 }
 
-function dispFunction() {
-  // Get the checkbox
-  var checkBox = document.getElementById("check1");
-  var checkBox2 = document.getElementById("check2");
-  // Get the output text
-  var disp = document.getElementById("cancel");
-
-  // If the checkbox is checked
-  if (checkBox.checked == true || checkBox2.checked == true){
-    disp.style.display = "block";
-  } else {
-    disp.style.display = "none";
-  }
-}
 
 function getRecent() {
   let dummy = [...activeListings];
@@ -389,6 +384,7 @@ function editAuctionModal(_auction) {
       }
       if(_auction.delivered){
         document.getElementById("withdrawBtn").disabled = false;
+        $("#cancelAuctionBuyer").addClass('is-hidden')
         $('#confirmBtn').addClass('is-hidden')
         $('#settleBtn').addClass('is-hidden')
       }
@@ -641,6 +637,7 @@ document
     }
     notification(`🎉 You successfully added a new auction.`)
     getAuctions()
+    location.reload();
   })
 
 document.querySelector("#gallery").addEventListener("click", async (e) => {

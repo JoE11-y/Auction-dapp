@@ -25,11 +25,11 @@ contract Auctions{
     
     //uint auctionStartTime = 86400; //actual setting  "A day"
     
-    uint auctionStartTime = 60; //for testing '1 mins'
+    uint auctionStartTime = 300; //for testing '5 mins'
     
     //uint completionDeadline = 604800; //actual setting "7 days"
     
-    uint completionDeadline = 60; // for testing '1 mins'
+    uint completionDeadline = 600; // for testing '10 mins' to complete transaction between the beneficiary and the hghestbidder
     
     uint Tax;
 
