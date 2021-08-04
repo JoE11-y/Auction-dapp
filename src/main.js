@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0xaC2D54d6b995a5500d1Af397cD9141F24ED3fc8A"
+const AuctionContractAddress = "0xB134Db853f4B6e1Eb98F6AF1c2e2BF704Ee38D59"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -200,12 +200,13 @@ function notificationOff() {
 
 function dispFunction() {
   // Get the checkbox
-  var checkBox = document.getElementById("check");
+  var checkBox = document.getElementById("check1");
+  var checkBox2 = document.getElementById("check2");
   // Get the output text
   var disp = document.getElementById("cancel");
 
   // If the checkbox is checked
-  if (checkBox.checked == true){
+  if (checkBox.checked == true || checkBox2.checked == true){
     disp.style.display = "block";
   } else {
     disp.style.display = "none";
@@ -295,7 +296,9 @@ function convertDays(_days) {
 function auctionTemplate(_auction) {
   return `
   <div class="card mb-4">
+  <div style="height: 23.6vw; display:flex; vertical-align: middle !important;"> 
   <img class="card-img-top" src="${_auction.image1}" alt="...">
+  </div>
   <div class="position-absolute top-0 end-0 bg-warning mt-4 px-2 py-1 rounded-start">
   <i class="fas fa-gavel"></i>&nbsp;${_auction.noOfBids} Bids
   </div>
@@ -303,7 +306,7 @@ function auctionTemplate(_auction) {
     <div class="translate-middle-y position-absolute top-0">
     ${identiconTemplate(_auction.owner)}
     </div>
-    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 120px; text-transform:uppercase;">
+    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 80px; text-transform:uppercase;">
     ${_auction.itemName}
     </h6>
     <h3 class="card-text mt-4">
@@ -357,13 +360,21 @@ function editAuctionModal(_auction) {
   }
 
   if(_auction.hasAuctionEnded && _auction.deadlinePassed){
-    $document.getElementById("cancelBtn").disabled = false;
-    $document.getElementById("refundBtn").disabled = false;
+    document.getElementById("cancelBtn").disabled = false;
+    document.getElementById("refundBtn").disabled = false;
+  }
+
+  if(_auction.hasAuctionEnded && _auction.noOfBids == 0){
+    $("#auctionBtns").addClass('is-hidden')
+    $("#buyersBtn").addClass('is-hidden')
+    $("#sellersBtn").addClass('is-hidden')
+    $("#postDeadlineBtns").addClass('is-hidden')
+    return;
   }
 
   if (_auction.hasAuctionEnded){
     if(_auction.isUserWinner) {
-      if(hasMadePayment){
+      if(_auction.hasMadePayment){
         $('#settleBtn').addClass('is-hidden')
       }else{
         $('#confirmBtn').addClass('is-hidden')
@@ -384,10 +395,10 @@ function editAuctionModal(_auction) {
   }
 
   if(_auction.isUserOwner){
-    if(hasSentItem){
-      $document.getElementById("sendItemBtn").disabled = true;
+    if(_auction.hasSentItem){
+      document.getElementById("sendItemBtn").disabled = true;
     }else{
-      $document.getElementById("withdraw").disabled = true;
+      document.getElementById("withdraw").disabled = true;
     }
     $("#auctionBtns").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
@@ -406,7 +417,6 @@ function editAuctionModal(_auction) {
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
     $("#postDeadlineBtns").addClass('is-hidden')
-
   }
   
 }
@@ -498,7 +508,7 @@ function auctionModalTemplate(_auction) {
             </button>
           </div>
           <div id="cancelAuctionBuyer">
-            Cancel Auction: <input type="checkbox" class="check" id="check" onclick="dispFunction()">
+            Cancel Auction: <input type="checkbox" class="check" id="check2" onclick="dispFunction()">
             <div id="cancel" style="display:none">
               <hr>
               <p>&emsp;&emsp;Note: This is only functional if seller doesn't release item</p>
@@ -515,13 +525,12 @@ function auctionModalTemplate(_auction) {
           </button>
           <blockquote>&emsp;&emsp;N/B: A withdrawable tax (10% of highest bid) will be paid by you as<br>
           &emsp;&emsp;security for buyer.</blockquote>
-          <br>
-          <p>&emsp;&emsp;N/B: You can only withdraw after bid is complete</p>
           &emsp;&emsp;<button type="button" id="withdraw" class="btn btn-dark withdrawTaxBtn">
             Withdraw Tax
           </button>
+          <p>&emsp;&emsp;N/B: You can only withdraw after bid is complete</p>
           <div id="cancelAuctionSeller">
-              Cancel Auction: <input type="checkbox" class="check" id="check" onclick="dispFunction()">
+          &emsp;&emsp;Cancel Auction: <input type="checkbox" class="check" id="check1" onclick="dispFunction()">
               <div id="cancel" style="display:none">
                 <hr>
                 <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make payments</p>
@@ -741,7 +750,7 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
   if (e.target.className.includes("sendItemBtn")) {
     $('#auctionModal').modal('hide');
     const index = currentAuctionID
-    notification("⌛ Waiting for payment approval...")
+    notification(`⌛ Waiting for payment approval for ${auctions[index].auctionTax}...`)
     try {
       await approve(auctions[index].auctionTax)
     } catch (error) {

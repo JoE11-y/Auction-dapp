@@ -25,11 +25,11 @@ contract Auctions{
     
     //uint auctionStartTime = 86400; //actual setting  "A day"
     
-    uint auctionStartTime = 180; //for testing
+    uint auctionStartTime = 180; //for testing '3 mins'
     
     //uint completionDeadline = 604800; //actual setting "7 days"
     
-    uint completionDeadline = 360; // for testing
+    uint completionDeadline = 600; // for testing '10 mins'
     
     uint Tax;
 
@@ -66,6 +66,8 @@ contract Auctions{
         bool highestBidTransferred;
         bool itemSent;
         bool auctionNotSettled;
+        bool isSellerDone;
+        bool isBuyerDone;
         State auctionState; //to handle payment between the highestBidder and the Beneficiary
 
         mapping (uint => Image) images;
@@ -189,10 +191,11 @@ contract Auctions{
 
     function withdrawBidFee(uint _index) public onlyAfter(auctions[_index].auctionEndTime) hasPaidBidFee(_index){ 
         if (msg.sender == auctions[_index].highestBidder){
-            require(auctions[_index].auctionSettled || auctions[_index].auctionState == State.DELIVERY_COMPLETE, "You cannot withdraw Bid Fee until you have settled the auction.");
+            require(auctions[_index].auctionState == State.DELIVERY_COMPLETE, "You cannot withdraw Bid Fee until you have settled the auction.");
             amount = auctions[_index].biddingFee;
             IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
             auctions[_index].hasPaidBidFee[msg.sender] = false;
+            auctions[_index].isBuyerDone = true;
         }else{
             amount = auctions[_index].biddingFee;
             IERC20Token(cUsdTokenAddress).transfer(msg.sender, amount);
@@ -248,18 +251,18 @@ contract Auctions{
      
         IERC20Token(cUsdTokenAddress).transfer(auctions[_index].beneficiary, auctions[_index].highestBid);
         auctions[_index].auctionState = State.DELIVERY_COMPLETE;
-        auctions[_index].auctionSettled = true;
     }
     
     function withdrawTax(uint _index) onlyAfter(auctions[_index].auctionEndTime) onlyAuctionOwner(_index) hasPaidTax(_index) public{
         require(
-            auctions[_index].auctionState == State.DELIVERY_COMPLETE || auctions[_index].auctionSettled, "Item has not been receieved by Highest Bidder"    
+            auctions[_index].auctionState == State.DELIVERY_COMPLETE, "Item has not been receieved by Highest Bidder"    
         );
         
         Tax = auctions[_index].auctionTax;
         IERC20Token(cUsdTokenAddress).transfer(auctions[_index].beneficiary, Tax);
         auctions[_index].hasPaidTax[msg.sender] = false;
-
+        auctions[_index].isSellerDone = true;
+        
     }
     
     function cancelAuctionHighestBidder(uint _index) onlyAfter(auctions[_index].auctionDeadline) onlyHighestbidder(_index) public {
@@ -331,9 +334,12 @@ contract Auctions{
     }
     
     function isAuctionSettled(uint _index) public view returns(bool){
-        return(
-            auctions[_index].auctionSettled
-        );
+        if(auctions[_index].auctionSettled || (auctions[_index].isSellerDone == auctions[_index].isBuyerDone)){
+            return(true);  
+        }else{
+            return(false);
+        }
+
     }
     
     function hasMadePayment(uint _index) public view returns(bool){
