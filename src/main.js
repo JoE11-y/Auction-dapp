@@ -18,6 +18,7 @@ let currentAuctionID
 let auctions = []
 let activeListings = []
 let closedListings = []
+let isShown
 
 
 //Celo Blockchain Functions
@@ -72,7 +73,7 @@ const setUser = async function() {
 }
 
 const auctionNotifications = async function() {
-  displayNotifications()
+  processNotifications(auctions);
 }
 
 const getAuctions = async function() {
@@ -130,6 +131,7 @@ const getAuctions = async function() {
   auctions = await Promise.all(_auctions)
   sortListings()
   setUserID()
+  renderTitle("Recent Auctions")
   getRecent()
   renderAuctions(recentAuctions)
   notificationOff()
@@ -153,47 +155,87 @@ function setUserID() {
   })
 }
 
-function displayNotifications() {
-  auctions.forEach((_auction) => {
-    if(_auction.hasAuctionEnded){
-      if (_auction.isUserWinner) {
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+/*Processing Function*/
+async function notificationDisplay(_auction){
+  if(_auction.hasAuctionEnded){
+    if (_auction.hasPlacedBid && !_auction.isUserWinner) {
+      await delay(3000);
+      notificationOff()
+      await delay(500);
+      notification(`${_auction.itemName} listing has ended.`)
+    }
+
+    if (_auction.isUserWinner) {
+      if(!_auction.delivered &&  !_auction.hasSentItem  && !_auction.hasMadePayment){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
         notification(`🎉 Congratulations you won the auction of ${_auction.itemName}.`)
-      }else if (_auction.hasPlacedBid && !_auction.isUserWinner) {
-        notification(`${_auction.itemName} listing has ended.`)
-      }else if(_auction.isUserOwner){
-        notification(`Your ${_auction.itemName} listing has ended.`)
-      }
-
-      if (_auction.isUserWinner) {
-        if(_auction.hasSentItem ){
-          setTimeout(notification(`Seller has sent item ${_auction.itemName}.`), 10000)
-        }
-        if(_auction.hasMadePayment){
-          setTimeout(notification(`Waiting for Seller to send ${_auction.itemName} item. ${_auction.itemName}.`), 10000)
-        }
-        if(_auction.delivered){
-          setTimeout(notification(`Your Order for ${_auction.itemName} is now complete.`), 10000)
-        }
-      }
-
-      if (_auction.isUserOwner) {
-        if(_auction.hasMadePayment){
-          setTimeout(notification(`Buyer has completed payment for item ${_auction.itemName}.`), 10000)
-        }
-        if (_auction.hasSentItem){
-          setTimeout(notification(`Waiting for receipt confirmation from buyer for the ${_auction.itemName} item`), 10000)
-        }
-        if (_auction.delivered){
-          setTimeout(notification(`Buyer has received successfully received item, check your balance to see if you have received your money.`), 10000)
-        }
-      }
-    }else {
-     if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
-      notification(`Your Bid for ${_auction.name} has been outbid.`)
+      }else if(!_auction.delivered &&  _auction.hasSentItem  && !_auction.hasMadePayment){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        setTimeout(notification(`Seller has sent item ${_auction.itemName}.`), 10000)
+      }else if(!_auction.delivered && _auction.hasMadePayment){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        setTimeout(notification(`Waiting for Seller to send ${_auction.itemName} item. ${_auction.itemName}.`), 10000)
+      }else if(_auction.hasPaidBidFee &&_auction.delivered){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        setTimeout(notification(`Your Order for ${_auction.itemName} is now complete.`), 10000)
+      }else{
+        notification("Done")
       }
     }
+
+    if (_auction.isUserOwner) {
+      if(!_auction.delivered && !_auction.hasMadePayment && !_auction.hasSentItem && !(_auction.noOfBids == 0)){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        notification(`Your ${_auction.itemName} listing has ended.`)
+      }else if(!_auction.delivered && _auction.hasMadePayment && !_auction.hasSentItem){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        notification(`Buyer has completed payment for item ${_auction.itemName}.`)
+      }else if(!_auction.delivered && _auction.hasSentItem){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        notification(`Waiting for receipt confirmation from buyer for the ${_auction.itemName} item`)
+      }else if(_auction._hasPaidTax && _auction.delivered){
+        await delay(3000);
+        notificationOff()
+        await delay(500);
+        notification(`Buyer has received successfully received item, check your balance to see if you have received your money.`)
+      }else{
+        notification("Done")
+      }
+    }
+  }else {
+    if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
+      await delay(2000);
+      notificationOff()
+      await delay(500);
+      notification(`Your Bid for ${_auction.itemName} has been outbid.`)
+    }
+  }
+}
+
+/* Waiting in the loop */
+async function processNotifications(array) {
+  array.forEach(async (_auction) => {
+    await notificationDisplay(_auction);
   })
 }
+
 
 function sortListings() {
   auctions.forEach((_auction) => {
@@ -235,6 +277,10 @@ function renderAuctions(_auctions) {
   })
 }
 
+function renderTitle(_text){
+  document.getElementById("_header").innerHTML = ""
+  document.getElementById("_header").innerHTML = _text
+}
 
 function checkTime(_auction) {
   var endingTime = _auction.endTime;
@@ -311,7 +357,7 @@ function auctionTemplate(_auction) {
     <div class="translate-middle-y position-absolute top-0">
     ${identiconTemplate(_auction.owner)}
     </div>
-    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 80px; text-transform:uppercase;">
+    <h6 class="card-title fs-4 fw-bold mt-2" style=" font-size: 20px !important; min-height: 90px; text-transform:uppercase;">
     ${_auction.itemName}
     </h6>
     <h3 class="card-text mt-4">
@@ -358,6 +404,7 @@ function editAuctionModal(_auction) {
     $("#sellersBtn").addClass('is-hidden')
     return;
   }
+
   if(_auction.isAuctionSettled){
     $("#auctionBtns").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
@@ -424,6 +471,13 @@ function editAuctionModal(_auction) {
     return;
   }
   if (_auction.hasPaidBidFee){
+    if(!_auction.hasAuctionEnded){
+      if(kit.defaultAccount == _auction.highestBidder){
+        $("#highestBidder").removeClass('is-hidden')
+      }else{
+        $("#notHighestBidder").removeClass('is-hidden')
+      }
+    }
     $(".payBidBtn").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
@@ -491,7 +545,9 @@ function auctionModalTemplate(_auction) {
         <div>
           <p>&emsp;&emsp;Start Price:&ensp; ${_auction.startPrice.shiftedBy(-ERC20_DECIMALS).toFixed(2)} &nbsp;cUSD</p>
           <p>&emsp;&emsp;Highest Bid:&ensp;${_auction.highestBid.shiftedBy(-ERC20_DECIMALS).toFixed(2)}&nbsp;cUSD</p>
-          <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p>  
+          <p>&emsp;&emsp;No of Bids:&ensp;${_auction.noOfBids}&nbsp;<i class="fas fa-gavel"></i></p> 
+          <p id="highestBidder" class="is-hidden">&emsp;&emsp;You are the highest bidder</p>
+          <p id="notHighestBidder" class="is-hidden">&emsp;&emsp;You are not the highest bidder</p> 
         </div>
         <hr>
         <div id="auctionBtns">
@@ -649,12 +705,14 @@ document.querySelector("#gallery").addEventListener("click", async (e) => {
 
 document.querySelector("#activeListings").addEventListener("click", async (e) => {
   notification("⌛ Loading...")
+  renderTitle("Active Auctions")
   renderAuctions(activeListings)
   notification("Complete")
 })
 
 document.querySelector("#closedListings").addEventListener("click", async (e) => {
   notification("⌛ Loading...")
+  renderTitle("Closed Auctions")
   renderAuctions(closedListings)
   notification("Complete")
 })
@@ -686,6 +744,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You can now bid for "${auctions[index].itemName}".`)
+      await delay(3000);
+      notificationOff()
+      await delay(500);
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -704,6 +765,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You have successfully placed a bid for "${auctions[index].itemName}".`)
+      await delay(3000);
+      notificationOff()
+      await delay(500);
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -722,6 +786,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 Withdrawal of Bid Fee ${auctions[index].biddingFee.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
+      await delay(3000);
+      notificationOff()
+      await delay(500);
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -746,6 +813,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You successfully bought "${auctions[index].itemName}".`)
+      await delay(3000);
+      notificationOff()
+      await delay(500);
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -770,6 +840,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 Payment sucessful.`)
+      await delay(3000);
+      notificationOff()
+      await delay(500);
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
@@ -788,6 +861,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Confirmation complete.`)
+        await delay(3000);
+        notificationOff()
+        await delay(500);
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
@@ -806,6 +882,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
+        await delay(3000);
+        notificationOff()
+        await delay(500);
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
@@ -824,6 +903,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Auction has been cancelled, and you have been refunded`)
+        await delay(3000);
+        notificationOff()
+        await delay(500);
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
@@ -842,6 +924,9 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Auction has been cancelled.`)
+        await delay(3000);
+        notificationOff()
+        await delay(500);
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
