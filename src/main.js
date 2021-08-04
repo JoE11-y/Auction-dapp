@@ -7,7 +7,7 @@ import auctionAbi from '../contract/auction.abi.json'
 import erc20Abi from "../contract/erc20.abi.json"
 
 const ERC20_DECIMALS = 18
-const AuctionContractAddress = "0xB134Db853f4B6e1Eb98F6AF1c2e2BF704Ee38D59"
+const AuctionContractAddress = "0x5aA74ceEFa0EaddB42100c064C86063f60ccBcbe"
 const cUSDContractAddress = "0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1"
 
 
@@ -72,9 +72,7 @@ const setUser = async function() {
 }
 
 const auctionNotifications = async function() {
-  displayWinningNotification()
-  displayUserOutBid()
-  auctionEndedAnnouncement()
+  displayNotifications()
 }
 
 const getAuctions = async function() {
@@ -96,13 +94,15 @@ const getAuctions = async function() {
       let y = await contract.methods.hasMadePayment(i).call()
       let z = await contract.methods.hasSentItem(i).call()
       let a = await contract.methods.hasPassedDeadline(i).call()
+      let b = await contract.methods.deliveryComplete(i).call()
+      let c = await contract.methods._hasPaidTax(i).call()
       resolve({
         index: i,
         owner: o[0],
         itemName: o[1],
         itemDescription: o[2],
         endTime: o[3],
-        auctionTax: o[4],
+        auctionTax: new BigNumber(o[4]),
         image1: p[0],
         image2: p[1],
         image3: p[2],
@@ -120,6 +120,8 @@ const getAuctions = async function() {
         hasMadePayment: y,
         hasSentItem: z,
         deadlinePassed: a,
+        delivered: b,
+        paidTax: c,
       })
     })
     _auctions.push(_auction)
@@ -151,28 +153,36 @@ function setUserID() {
   })
 }
 
-function displayWinningNotification() {
-  notificationOff()
-  closedListings.forEach((_auction) => {
-    if (_auction.hasAuctionEnded && kit.defaultAccount == _auction.highestBidder) {
-      notification(`🎉 Congratulations you won the auction of ${_auction.itemName}.`)
-    }
-  })
-}
-
-function displayUserOutBid() {
-  activeListings.forEach((_auction) => {
-    if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
-      notification(`🎉 Your Bid for ${_auction.name} has been outbid.`)
-    }
-  })
-}
-
-function auctionEndedAnnouncement() {
+function displayNotifications() {
   auctions.forEach((_auction) => {
-    if (_auction.hasPlacedBid && _auction.hasAuctionEnde && !_auction.isUserWinner) {
-      notification(`${_auction.itemName} listing has ended.`)
+    if(_auction.hasAuctionEnded){
+      if (_auction.isUserWinner) {
+        notification(`🎉 Congratulations you won the auction of ${_auction.itemName}.`)
+      }else if (_auction.hasPlacedBid && !_auction.isUserWinner) {
+        notification(`${_auction.itemName} listing has ended.`)
+      }else if(_auction.isUserOwner){
+        notification(`Your ${_auction.itemName} listing has ended.`)
+      }
+
+      if (_auction.hasSentItem && _auction.isUserWinner) {
+        setTimeout(notification(`Seller has sent item ${_auction.itemName}.`), 10000)
+      }
+      if (_auction.hasMadePayment && _auction.isUserOwner) {
+        setTimeout(notification(`Buyer has completed payment for item ${_auction.itemName}.`), 10000)
+      }
+      if (_auction.delivered && _auction.isUserOwner){
+        setTimeout(notification(`Buyer has received successfully received item, check your balance to see if you have received your money.`), 10000)
+      }
+      if (_auction.delivered&& _auction.isUserWinner) {
+        setTimeout(notification(`Your Order for ${_auction.itemName} is now complete.`), 10000)
+      }
     }
+   else {
+     if (_auction.hasPlacedBid && kit.defaultAccount != _auction.highestBidder) {
+      notification(`Your Bid for ${_auction.name} has been outbid.`)
+      }
+    }
+
   })
 }
 
@@ -270,13 +280,13 @@ function checkTime(_auction) {
     seconds -= hrs * 3600;
     var mins = Math.floor(seconds / 60);
     seconds -= mins * 60;
-    if(hrs == 0){
+    if(hrs == 0 && mins != 0){
       return `
-    <span> Auction Starts in ${mins}m </span>
+    <span> Auction starts in ${mins}m </span>
     `
-    }else if(mins == 0){
+    }else if(hrs == 0 && mins == 0){
       return `
-      <span> Auction Starts in ${seconds}s </span>
+      <span> Auction starts in ${seconds}s </span>
     `
     }else {
       return `
@@ -343,82 +353,90 @@ function renderAuctionModal(index) {
 
 
 function editAuctionModal(_auction) {
+  if(_auction.deadlinePassed){
+    document.getElementById("cancelBtn").disabled = false;
+    document.getElementById("refundBtn").disabled = false;
+  }
   if (!_auction.hasAuctionStarted) {
     $("#auctionBtns").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
-
   if(_auction.isAuctionSettled){
     $("#auctionBtns").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
-
-  if(_auction.hasAuctionEnded && _auction.deadlinePassed){
-    document.getElementById("cancelBtn").disabled = false;
-    document.getElementById("refundBtn").disabled = false;
-  }
-
-  if(_auction.hasAuctionEnded && _auction.noOfBids == 0){
-    $("#auctionBtns").addClass('is-hidden')
-    $("#buyersBtn").addClass('is-hidden')
-    $("#sellersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
-    return;
-  }
-
   if (_auction.hasAuctionEnded){
+    if (!_auction.hasPaidBidFee &&_auction.noOfBids == 0){
+      $("#auctionBtns").addClass('is-hidden')
+      $("#buyersBtn").addClass('is-hidden')
+      $("#sellersBtn").addClass('is-hidden')
+      return;
+    }
     if(_auction.isUserWinner) {
+      if(!_auction.hasPaidBidFee){
+        $("#withdrawBtn").addClass('is-hidden')
+        $("#cancelAuctionBuyer").addClass('is-hidden')
+      }
       if(_auction.hasMadePayment){
         $('#settleBtn').addClass('is-hidden')
       }else{
         $('#confirmBtn').addClass('is-hidden')
+        $("#cancelAuctionBuyer").addClass('is-hidden')
+      }
+      if(_auction.delivered){
+        document.getElementById("withdrawBtn").disabled = false;
+        $('#confirmBtn').addClass('is-hidden')
+        $('#settleBtn').addClass('is-hidden')
       }
       $("#bid").addClass('is-hidden')
       $(".payBidBtn").addClass('is-hidden')
       $("#sellersBtn").addClass('is-hidden')
-      $("#postDeadlineBtns").addClass('is-hidden')
       return;
-    } else if(!_auction.isUserOwner){
-        $("#bid").addClass('is-hidden')
-        $(".payBidBtn").addClass('is-hidden')
-        $("#buyersBtn").addClass('is-hidden')
-        $("#sellersBtn").addClass('is-hidden')
-        $("#postDeadlineBtns").addClass('is-hidden')
-        return;
-    } 
+    }
+    if(!_auction.isUserOwner){
+      if(!_auction.hasPaidBidFee){
+        $("#withdrawBtn").addClass('is-hidden')
+      }
+      document.getElementById("withdrawBtn").disabled = false;
+      $("#bid").addClass('is-hidden')
+      $(".payBidBtn").addClass('is-hidden')
+      $("#buyersBtn").addClass('is-hidden')
+      $("#sellersBtn").addClass('is-hidden')
+      return; 
+    }
   }
-
   if(_auction.isUserOwner){
+    if(!_auction.hasMadePayment){
+      document.getElementById("sendItemBtn").disabled = true;
+    }else{
+      document.getElementById("cancelBtn").disabled = true;
+    }
     if(_auction.hasSentItem){
       document.getElementById("sendItemBtn").disabled = true;
     }else{
       document.getElementById("withdraw").disabled = true;
+    }   
+    if(!_auction.paidTax){
+      document.getElementById("withdraw").disabled = true;
     }
     $("#auctionBtns").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
     return;
   }
-
   if (_auction.hasPaidBidFee){
     $(".payBidBtn").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
   } else {
     $("#bid").addClass('is-hidden')
     $("#withdrawBtn").addClass('is-hidden')
     $("#buyersBtn").addClass('is-hidden')
     $("#sellersBtn").addClass('is-hidden')
-    $("#postDeadlineBtns").addClass('is-hidden')
   }
-  
 }
 
 
@@ -489,7 +507,7 @@ function auctionModalTemplate(_auction) {
             &emsp;&emsp;<button type="button" id="payBidBtn" class="btn btn-dark payBidBtn">
             Pay Bid Fee
             </button>
-            <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee">
+            <button type="button" id="withdrawBtn" class="btn btn-dark withdrawBidFee" disabled>
               Withdraw Bid Fee
             </button>
           </div>
@@ -508,14 +526,11 @@ function auctionModalTemplate(_auction) {
             </button>
           </div>
           <div id="cancelAuctionBuyer">
-            Cancel Auction: <input type="checkbox" class="check" id="check2" onclick="dispFunction()">
-            <div id="cancel" style="display:none">
               <hr>
               <p>&emsp;&emsp;Note: This is only functional if seller doesn't release item</p>
               &emsp;&emsp;<button type="button" id="refundBtn" class="btn btn-dark requestRefundBtn" disabled>
                 Request Refund
               </button>
-          </div>  
       </div>
         </div>
         <div id="sellersBtn">
@@ -530,14 +545,12 @@ function auctionModalTemplate(_auction) {
           </button>
           <p>&emsp;&emsp;N/B: You can only withdraw after bid is complete</p>
           <div id="cancelAuctionSeller">
-          &emsp;&emsp;Cancel Auction: <input type="checkbox" class="check" id="check1" onclick="dispFunction()">
-              <div id="cancel" style="display:none">
-                <hr>
-                <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make payments</p>
-                &emsp;&emsp;<button type="button" id="cancelBtn" class="btn btn-dark cancelBtn" disabled>
-                  Cancel Auction
-                </button>
-              </div>  
+            <hr>
+            <p>&emsp;&emsp;Note: This is only functional if the Highest Bidder does not make<br>
+            &emsp;&emsp;payments</p>
+            &emsp;&emsp;<button type="button" id="cancelBtn" class="btn btn-dark cancelBtn" disabled>
+              Cancel Auction
+            </button>
           </div>
         </div>
       </div>     
@@ -676,12 +689,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You can now bid for "${auctions[index].itemName}".`)
-      //getProducts()
-      getAuctions()
-      getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
+    location.reload();
   }
 
   if (e.target.className.includes("placeBid")) {
@@ -696,10 +707,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You have successfully placed a bid for "${auctions[index].itemName}".`)
-      getAuctions()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
+    location.reload();
   }
 
   // Withdrawing Bid Fee
@@ -714,11 +725,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 Withdrawal of Bid Fee ${auctions[index].biddingFee.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
-      getAuctions()
-      getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
+    location.reload();
   }
 
   // Settle Auction
@@ -739,18 +749,17 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 You successfully bought "${auctions[index].itemName}".`)
-      getAuctions()
-      getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
+    location.reload();
   }
 
   // ItemSent Declaration Button
   if (e.target.className.includes("sendItemBtn")) {
     $('#auctionModal').modal('hide');
     const index = currentAuctionID
-    notification(`⌛ Waiting for payment approval for ${auctions[index].auctionTax}...`)
+    notification(`⌛ Waiting for payment approval for ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)}...`)
     try {
       await approve(auctions[index].auctionTax)
     } catch (error) {
@@ -764,11 +773,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           from: kit.defaultAccount
         })
       notification(`🎉 Payment sucessful.`)
-      getAuctions()
-      getBalance()
     } catch (error) {
       notification(`⚠️ ${error}.`)
     }
+    location.reload();
   }
 
     // Confirm Item receipt Button
@@ -783,14 +791,13 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Confirmation complete.`)
-        getAuctions()
-        getBalance()
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
+      location.reload();
     }
 
-    // Confirm Item receipt Button
+    // Withdrawing Tax
     if (e.target.className.includes("withdrawTaxBtn")) {
       $('#auctionModal').modal('hide');
       const index = currentAuctionID
@@ -802,11 +809,10 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
             from: kit.defaultAccount
           })
         notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
-        getAuctions()
-        getBalance()
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
+      location.reload();
     }
 
     // HighestBid Refund Button
@@ -820,12 +826,11 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           .send({
             from: kit.defaultAccount
           })
-        notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
-        getAuctions()
-        getBalance()
+        notification(`🎉 Auction has been cancelled, and you have been refunded`)
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
+      location.reload();
     }
 
     // Cancel Auction Button for Auction Beneficiary 
@@ -839,12 +844,11 @@ document.querySelector("#auctionDisplay").addEventListener("click", async (e) =>
           .send({
             from: kit.defaultAccount
           })
-        notification(`🎉 Withdrawal of Auction Tax ${auctions[index].auctionTax.shiftedBy(-ERC20_DECIMALS).toFixed(2)} cUSD complete.`)
-        getAuctions()
-        getBalance()
+        notification(`🎉 Auction has been cancelled.`)
       } catch (error) {
         notification(`⚠️ ${error}.`)
       }
+      location.reload();
     }
 
 })
